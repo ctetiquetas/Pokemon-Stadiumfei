@@ -165,7 +165,7 @@ class Model:
         self.geo(layout)
         animations={}
         table=self.ptr(header+12)
-        for index in [0,7,8]:
+        for index in [0,5,6,7,8,10,14]:
             if index<self.d[header+4]: animations[str(index)]=self.animation(self.ptr(table+index*4))
         return dict(textures=self.textures,groups=[dict(texture=k,**v) for k,v in self.groups.items()],bones=self.bones,animations=animations)
 

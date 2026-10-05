@@ -25,6 +25,12 @@ La sala se sirve únicamente en localhost. Los controles del anfitrión están e
 
 El proceso TikTok existente reenvía `CommentEvent` y `LikeEvent` con el identificador de usuario; utiliza `count`, no el total global de likes. No asigna taps de usuarios desconocidos o no inscritos. TikTok puede agrupar y retrasar estos eventos; la exactitud en un LIVE real depende de los eventos identificados que entregue el servicio. Si una foto no está disponible, se muestra la inicial del participante. No se usan regalos para generar puntos.
 
-Las animaciones duran 0.70 segundos por salto; los saltos recibidos se encolan por jugador. Solo cuentan los golpes que ocurren antes de acabar el tiempo. Los taps del lobby, la cuenta regresiva y el resultado se ignoran. El servidor lleva la puntuación, independientemente de cuántas ventanas o fuentes OBS estén abiertas.
+Las animaciones duran 1,1 segundos por salto (clips originales 8 → 10 → 14 → 5 → 6 a 30 FPS; impacto a los 10/30 segundos); los saltos recibidos se encolan por jugador. Solo cuentan los golpes que ocurren antes de acabar el tiempo. Los taps del lobby, la cuenta regresiva y el resultado se ignoran. El servidor lleva la puntuación, independientemente de cuántas ventanas o fuentes OBS estén abiertas.
 
 Pruebas automáticas: `python -m unittest test_game.py`. Se verifican límite de doce, usuarios duplicados, cierre de inscripciones, acumulación individual, impactos, cola, corte de tiempo, ganador, empate y reinicio. Verificación local realizada: doce jugadores y puntuaciones de 1 a 12; pantalla final del ganador y renderizado WebGL sin errores. Falta la validación con participantes de un LIVE real.
+
+## Música original
+
+La inscripción y la cuenta regresiva reproducen la pista de selección de minijuegos (0x13), la partida la de Magikarp (10), y el ganador la fanfarria de victoria (0x1A). Las pistas WAV se generan localmente con el propio motor de audio del port. El navegador cambia de música automáticamente, repite las pistas de sala y partida, y reproduce la victoria una vez por resultado. El control ♫ permite activar, silenciar y ajustar el volumen. Si el navegador impide el inicio automático, pulsa Activar música. En OBS activa **Controlar audio mediante OBS** en la fuente navegador y comprueba su mezclador.
+
+Para regenerar la música, cierra el port y ejecuta `Capturar-musica.ps1`. Instala un hook opcional y compila el port, inicia una instancia de captura y guarda solo las tres pistas en `local-assets/`. Requiere el port ya configurado para compilar. El hook no cambia el juego normal: solo se activa cuando se define `STADIUMFEI_MUSIC_REQUEST`. No se suben la música ni los recursos del juego al repositorio.

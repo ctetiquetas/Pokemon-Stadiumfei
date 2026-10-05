@@ -1,4 +1,5 @@
 import * as THREE from '/vendor/three.module.js';
+import {updateMusic,musicDiagnostics} from '/music.js';
 
 const $ = s => document.querySelector(s);
 const error = text => {$('#error').hidden=false; $('#error').textContent=text;};
@@ -45,11 +46,11 @@ for(const [name,model] of Object.entries(models)){
  }
  // The source model keeps N64's original scale and skeletal rest pose.
  group.rotation.y=-Math.PI*.3125;
- if(name==='magikarp')group.rotation.x=Math.PI/2;
+ group.rotation.x=0x600*Math.PI/32768;
  group.updateMatrixWorld(true);
  const bounds=new THREE.Box3().setFromObject(group),center=bounds.getCenter(new THREE.Vector3());
- const root=new THREE.Group();group.position.sub(center);root.add(group);
- const size=bounds.getSize(new THREE.Vector3());root.scale.setScalar((name==='magikarp'?150:60)/Math.max(size.x,size.y));
+ const root=new THREE.Group();if(name!=='magikarp')group.position.sub(center);root.add(group);
+ const size=bounds.getSize(new THREE.Vector3());root.scale.setScalar(name==='magikarp'?2.8:60/Math.max(size.x,size.y));
  templates[name]=root;
 }
 function tint(root,color){
@@ -74,15 +75,25 @@ function tint(root,color){
   };
  });
 }
-function pose(fish,index,frame){
+function pose(fish,index,frame,arenaJump=false){
  const frames=models.magikarp.animations[index]||models.magikarp.animations['0'];
  const matrices=frames[Math.min(frames.length-1,Math.max(0,Math.floor(frame)))];
- const idleRoot=models.magikarp.animations['0'][0][0];
- // Arena physics controls the jump height; retain the source skeletal motion.
- const delta=[matrices[0][12]-idleRoot[12],matrices[0][13]-idleRoot[13],matrices[0][14]-idleRoot[14]];
+ // Keep the original body poses and trajectory, fitting their travel to a
+ // twelve-player cell independently of the larger, readable character size.
+ const travel=arenaJump?matrices[1][13]-models.magikarp.animations['0'][0][1][13]:0;
  fish.userData.poseMatrices.forEach((m,i)=>{
-  m.fromArray(matrices[i]);m.elements[12]-=delta[0];m.elements[13]-=delta[1];m.elements[14]-=delta[2];
+  m.fromArray(matrices[i]);if(i>0)m.elements[13]-=travel*(1-.7/2.8);
  });
+}
+const jumpClips=['8','10','14','5','6'];
+function jumpPose(fish,age){
+ let frame=age*30;
+ for(const clip of jumpClips){
+  const length=models.magikarp.animations[clip].length;
+  if(frame<length){pose(fish,clip,frame,true);return;}
+  frame-=length;
+ }
+ pose(fish,'0',0);
 }
 const entities=new Map(),cards=new Map();let state=null,received=performance.now(),round=-1,trophy=null,winnerKey='';
 function avatar(player){
@@ -107,8 +118,8 @@ function reset(){
 function entityFor(player){
  if(entities.has(player.id))return entities.get(player.id);
  const root=new THREE.Group(),fish=templates.magikarp.clone(true),button=templates.button.clone(true);
- tint(fish,player.color);button.rotation.y=Math.PI;button.position.set(0,100,-10);
- fish.position.set(0,-70,20);root.add(fish,button);
+ tint(fish,player.color);button.rotation.y=Math.PI;button.position.set(0,50,-10);
+ fish.position.set(0,-105,20);root.add(fish,button);
  root.position.set((player.slot%3-1)*347,538-Math.floor(player.slot/3)*358.5,0);scene.add(root);
  const entity={root,fish,button};entities.set(player.id,entity);
  const card=document.querySelector(`[data-slot="${player.slot}"]`);card.classList.add('occupied');card.style.setProperty('--player',player.color);card.replaceChildren();
@@ -134,7 +145,7 @@ function updateWinner(s){
  $('#winner-score').textContent=winners.length?`${winners[0].score} golpes al botón`:'';
  if(trophy){trophyScene.remove(trophy);trophy.traverse(m=>{if(m.isMesh)m.material.dispose();});}
  trophy=new THREE.Group();
- winners.forEach((p,i)=>{let fish=templates.magikarp.clone(true);tint(fish,p.color);fish.scale.multiplyScalar(winners.length===1?2:winners.length>4?.85:1.2);const cols=Math.min(4,winners.length),rows=Math.ceil(winners.length/cols);fish.position.x=(i%cols-(cols-1)/2)*170;fish.position.y=((rows-1)/2-Math.floor(i/cols))*115;trophy.add(fish);});
+ winners.forEach((p,i)=>{let fish=templates.magikarp.clone(true);tint(fish,p.color);fish.scale.multiplyScalar(winners.length===1?3:winners.length>4?1.1:1.6);const cols=Math.min(4,winners.length),rows=Math.ceil(winners.length/cols);fish.position.x=(i%cols-(cols-1)/2)*170;fish.position.y=((rows-1)/2-Math.floor(i/cols))*115;trophy.add(fish);});
  trophyScene.add(trophy);
  $('#podium').replaceChildren();
  [...s.players].sort((a,b)=>b.score-a.score||a.slot-b.slot).slice(0,5).forEach((p,i)=>{
@@ -143,6 +154,7 @@ function updateWinner(s){
  });
 }
 function update(s){
+ updateMusic(s);
  state=s;received=performance.now();
  if(round!==s.round){round=s.round;reset();winnerKey='';}
  $('#phase').textContent={lobby:`SALA ABIERTA · ${s.players.length}/12`,countdown:'¡PREPÁRATE!',playing:'RONDA EN MARCHA',finished:'RONDA TERMINADA'}[s.phase];
@@ -174,14 +186,9 @@ function frame(now){
   for(const p of state.players){
    const e=entities.get(p.id);if(!e)continue;
    const age=p.jump_age===null?null:p.jump_age+elapsed;
-   let height=0;
-   if(age!==null&&age<state.jump_seconds){height=Math.sin(Math.PI*age/state.jump_seconds)*65;}
-   e.fish.position.y=-70+height;
-   if(age!==null&&age<state.jump_seconds)pose(e.fish,'8',age/state.jump_seconds*(models.magikarp.animations['8'].length-1));
+   if(age!==null&&age<state.jump_seconds)jumpPose(e.fish,age);
    else pose(e.fish,'0',(now*.03+p.slot*3)%models.magikarp.animations['0'].length);
-   e.fish.rotation.z=age===null?Math.sin(now*.003+p.slot)*.06:-Math.sin(Math.min(1,age/state.jump_seconds)*Math.PI)*Math.PI/2;
-   e.fish.rotation.y=Math.sin(now*.002+p.slot)*.09;
-   e.button.position.y=100+(age!==null&&Math.abs(age-state.hit_seconds)<.09?9:0);
+   e.button.position.y=50+(age!==null&&Math.abs(age-state.hit_seconds)<.09?9:0);
   }
   if(trophy){trophy.rotation.y=Math.sin(now*.00065)*.3;trophy.position.y=Math.sin(now*.002)*10;trophy.children.forEach(fish=>pose(fish,'7',now*.03%models.magikarp.animations['7'].length));}
  }
@@ -190,4 +197,4 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 // Read-only diagnostics for local visual and event verification.
-window.magikarpDiagnostics=()=>({state,models:Object.fromEntries(Object.entries(models).map(([k,v])=>[k,{triangles:v.groups.reduce((n,g)=>n+g.position.length/9,0),textures:v.textures.length}])),entities:entities.size});
+window.magikarpDiagnostics=()=>({state,music:musicDiagnostics(),models:Object.fromEntries(Object.entries(models).map(([k,v])=>[k,{triangles:v.groups.reduce((n,g)=>n+g.position.length/9,0),textures:v.textures.length}])),entities:entities.size});

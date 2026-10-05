@@ -5,8 +5,8 @@ import time
 
 COLORS = ['#f65a49','#ffd34d','#43d7eb','#a780ff','#72de72','#ff83bd',
           '#ff9c42','#568cff','#e4f067','#36c8a0','#b7a6f5','#e6bc93']
-JUMP_SECONDS = 0.70
-HIT_SECONDS = 0.34
+JUMP_SECONDS = 33 / 30  # Original clips 8 → 10 → 14 → 5 → 6, at 30 fps.
+HIT_SECONDS = 10 / 30  # Frame 2 of clip 14, after both four-frame takeoffs.
 
 
 class Arena:

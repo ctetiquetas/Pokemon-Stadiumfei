@@ -30,7 +30,7 @@ class ArenaTests(unittest.TestCase):
         self.assertEqual(len(self.game.players),2)
     def test_queue_scores_at_collisions_even_after_delayed_tick(self):
         self.join();self.begin();self.taps('uno',35)
-        self.clock.now=5;self.game.tick()
+        self.clock.now=5.6;self.game.tick()
         self.assertEqual(self.game.players['uno']['score'],3)
         self.assertEqual(self.game.players['uno']['remainder'],5)
     def test_deadline_winner_no_scores_after_round_and_reset(self):

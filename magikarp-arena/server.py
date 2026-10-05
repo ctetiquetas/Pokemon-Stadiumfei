@@ -26,7 +26,8 @@ class Handler(BaseHTTPRequestHandler):
         path=urlsplit(self.path).path
         if path=='/api/state': return self.respond(200, arena.snapshot())
         if path=='/api/health': return self.respond(200, dict(ok=True, app='stadiumfei-magikarp', assets=(ROOT/'local-assets/models.json').is_file()))
-        files={'/':'arena.html','/arena.js':'arena.js','/style.css':'style.css','/control':'control.html',
+        files={'/':'arena.html','/arena.js':'arena.js','/music.js':'music.js','/style.css':'style.css','/control':'control.html',
+            '/music/lobby.wav':'local-assets/lobby.wav','/music/playing.wav':'local-assets/playing.wav','/music/winner.wav':'local-assets/winner.wav',
             '/models.json':'local-assets/models.json','/vendor/three.module.js':'node_modules/three/build/three.module.js',
             '/vendor/three.core.js':'node_modules/three/build/three.core.js'}
         target=ROOT/files[path] if path in files else None

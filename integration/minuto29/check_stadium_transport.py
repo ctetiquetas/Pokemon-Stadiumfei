@@ -23,7 +23,7 @@ wait_for(lambda s:len(s['players'])==12)
 magikarp_live.control('start',30)
 wait_for(lambda s:s['phase']=='playing',5)
 for i in range(1,13):magikarp_live.forward('like',f'test-{i}',count=i*10)
-wait_for(lambda s:[p['score'] for p in s['players']]==list(range(1,13)))
+wait_for(lambda s:[p['score'] for p in s['players']]==list(range(1,13)),20)
 magikarp_live.control('finish')
 result=state()
 assert result['winners']==['test-12'],result
