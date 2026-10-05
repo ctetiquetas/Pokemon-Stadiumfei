@@ -27,6 +27,6 @@ Esta versión no detecta inicio/fin de ronda ni aterrizaje: detén el puente al 
 
 ## Estado de validación
 
-Contador y protocolo TCP cubiertos por pruebas con servidor simulado. La prueba visual con Magikarp y la conexión a un LIVE real todavía están pendientes. El directorio local del port contiene fuentes, pero no se encontró un ejecutable compilado.
+Contador y protocolo TCP cubiertos por pruebas con servidor simulado. La prueba visual con Magikarp y la conexión a un LIVE real todavía están pendientes. El port local ya se compiló y arrancó; el usuario pudo jugar Magikarp. La prueba TCP real confirmó una pulsación A por 9 + 1 taps. Falta verificar los puntos usando el puente dentro de una ronda.
 
 Los recursos originales del juego se mantienen fuera del repositorio. El proyecto conserva este puente separado del código GPL del port.

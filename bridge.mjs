@@ -124,6 +124,7 @@ async function main() {
       try { await controller.command({ cmd: 'set_button', name: 'A', down: false }); } catch {}
     }
     controller?.close();
+    live?.disconnect();
     input?.close();
   }
 }

@@ -1,0 +1,32 @@
+diff --git a/src/main/main.cpp b/src/main/main.cpp
+index 0e72876..f776c1d 100644
+--- a/src/main/main.cpp
++++ b/src/main/main.cpp
+@@ -1573,6 +1573,16 @@ static void poll_inputs() {
+     }
+ }
+ 
++// Normalize one signed SDL axis to the [-1, 1] contract expected by libultra.
++// Current N64ModernRuntime exposes get_input but no apply_stick_deadzone helper.
++static float stadiumfei_stick_axis(int32_t value, int32_t deadzone) {
++    const int32_t magnitude = value < 0 ? -value : value;
++    if (magnitude <= deadzone) return 0.0f;
++    const int32_t maximum = value < 0 ? 32768 : 32767;
++    const float normalized = float(magnitude - deadzone) / float(maximum - deadzone);
++    return value < 0 ? -normalized : normalized;
++}
++
+ static bool get_n64_input(int controller_num, uint16_t* buttons_out, float* x_out, float* y_out) {
+     *buttons_out = 0;
+     *x_out = 0.0f;
+@@ -1678,8 +1688,8 @@ static bool get_n64_input(int controller_num, uint16_t* buttons_out, float* x_ou
+     // 80.0f, which wrapped the shim's (int8_t)(127 * x) cast and inverted the
+     // axis — masked only because Stadium menus drive on the D-pad).
+     constexpr int32_t LSTICK_DEADZONE = 8000;
+-    *x_out =  ultramodern::input::apply_stick_deadzone(lx, LSTICK_DEADZONE);
+-    *y_out = -ultramodern::input::apply_stick_deadzone(ly, LSTICK_DEADZONE);
++    *x_out =  stadiumfei_stick_axis(lx, LSTICK_DEADZONE);
++    *y_out = -stadiumfei_stick_axis(ly, LSTICK_DEADZONE);
+ 
+     // Apply TCP override: OR buttons in, replace stick if non-zero.
+     // claim_input arms the override flag (so osContInit reports

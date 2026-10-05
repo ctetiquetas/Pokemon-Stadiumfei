@@ -1,22 +1,46 @@
-# Preparación de compilación — 4 de octubre de 2026
+# Estado de compilación — 5 de octubre de 2026
 
-- Visual Studio Community 18: Clang instalado y clang-cl.exe comprobado.
-- WSL instalado. Microsoft-Windows-Subsystem-Linux habilitado mediante DISM; código de salida 3010: requiere reiniciar Windows.
-- VirtualMachinePlatform aparece habilitado. Antes del reinicio WSL2 informa que no puede iniciar por virtualización; volver a comprobar después de reiniciar. WSL1 es una alternativa si no hay virtualización disponible.
-- La ROM local se convirtió a z64 y se verificó contra MD5 ed1378bc12115f71209a77844965ba50 (US 1.0). Se mantiene fuera de GitHub.
-- Dependencias descargadas en la carpeta local PokemonStadiumRecomp: mstan/N64ModernRuntime, mstan/rt64, mstan/N64Recomp, concurrentqueue y SlotMap.
-- n64recomp fijado al SHA 2b949c5c3f1c41dd76023e7626a6302a4a262a8a indicado por n64recomp.pin.
-- Subdependencias esenciales de N64Recomp y RT64 inicializadas. Los commits del emulador Ares opcional ya no están disponibles en su remoto; se omiten usando WITH_ARES_BRIDGE=OFF. No afectan la prueba de Magikarp prevista, pero la compilación final aún debe validarse.
-- El runtime trae su propia revisión de N64Recomp; comprobar compatibilidad al configurar antes de regenerar el juego.
-- Puerto corregido del puente: 4371, según src/main/main.cpp del port. Dos pruebas automáticas pasan.
+## Preparación completada
 
-## Continuación después del reinicio
+- Clang de Visual Studio Community 18 instalado.
+- WSL y Ubuntu funcionando tras reiniciar; herramientas MIPS y entorno Python instalados.
+- ROM US 1.0 convertida localmente a z64 y verificada. No se sube al repositorio.
+- Extracción y reconstrucción de pret completadas: ROM reconstruida con MD5 ed1378bc12115f71209a77844965ba50 y resultado OK.
+- ELF generado: PokemonStadiumRecomp/disasm/build/pokestadium-us.elf.
+- N64Recomp.exe compilado; generación de código C del juego completada.
+- Ejecutable Windows compilado correctamente (build rc=0) y arranque comprobado con la ROM local.
+- Paquetes Node instalados; importación del conector TikTok y dos pruebas del puente pasan.
+- Usuario para el LIVE: @xkafei. Regla: 10 likes recibidos = una pulsación A del jugador 1.
 
-1. Comprobar WSL e instalar una distribución Ubuntu para generar disasm/build/pokestadium-us.elf siguiendo docs/disasm-build.md del port.
-2. Instalar dependencias Linux de pret, ejecutar la extracción y generar el ELF. Respetar las modificaciones existentes en el submódulo disasm.
-3. Compilar el recompiler fijado y generar los archivos C usando game.toml.
-4. Configurar y compilar con build_ssanne.bat; resolver las dependencias restantes y comprobar compatibilidad.
-5. Abrir Magikarp y probar el puente con taps simulados. Ajustar el intervalo; todavía no se ha verificado un salto ni un punto dentro del juego.
-6. Probar TikTok LIVE con el usuario del transmisor; la integración real y la instalación de paquetes Node siguen pendientes.
+## Revisiones usadas
 
-No se ha generado aún un ejecutable jugable. No se reinició automáticamente el equipo.
+- Port: c99ed8effd71f9dcea6ede78f606512daa57ea2a.
+- pret/disasm: 756f7e332ee3837ead17197276cebc071108e8c6.
+- N64Recomp para generación estática: 2b949c5c3f1c41dd76023e7626a6302a4a262a8a (n64recomp.pin).
+- N64ModernRuntime: d4bf8828514c567df42ff049e1e90505bdcdb734.
+- N64Recomp del runtime: c955b4e03fc42e75877b27901424c75ee7fe7be5. El pin del submódulo del runtime no incluye las fuentes TCC que su código usa; se alineó con main para obtenerlas.
+- RT64: 821a8676963a1b486ca693ebaf8dd606f6c31c64.
+
+## Ajustes necesarios
+
+- Finales de línea LF en scripts y fuentes de pret: contenido idéntico al comparar ignorando finales de línea; se conserva la modificación previa de tools/n64splat.
+- fmt: respetar FMT_USE_CONSTEVAL=0 para compatibilidad con Clang/VS actual. build-port.ps1 aplica este ajuste idempotente en las dos copias de fmt.
+- Ares opcional desactivado: los commits de ese submódulo no están disponibles en su remoto. No se usa para jugar.
+- SDL: guard del builtin _m_prefetch tomado del SDL upstream actual para Clang moderno; aplicado en las dos cabeceras usadas.
+- ImGui: inicializar empty_string a cero para evitar el diagnóstico de variable no inicializada.
+- Entrada analógica: parche local input-deadzone.patch normaliza ejes para suplir la función ausente del runtime.
+- TinyCC local copiado a build/tcc para las cargas dinámicas del runtime.
+- Puerto TCP del juego: 4371.
+
+## Uso previsto
+
+1. Abrir-Port.cmd abre el launcher. Selecciona la ROM local y asigna teclado o mando al jugador 1.
+2. Entra en Kids' Club, selecciona Magikarp e inicia una ronda.
+3. Probar-Taps.cmd: escribe 10 y Enter, o 9 y después 1. reset borra la cola; q detiene el puente.
+4. Conectar-LIVE.cmd conecta @xkafei si el LIVE está activo. Detén y reinicia el puente entre rondas.
+
+Prueba del puente contra el ejecutable real completada: 9 + 1 taps generaron una sola pulsación A (presión, liberación y limpieza al salir). El contador VI avanzó y A quedó liberada. El usuario confirmó que pudo entrar a Magikarp y jugar una partida.
+
+La duración de A y el intervalo todavía necesitan calibración jugando. El código de Magikarp (fragmento 6) consulta pulsaciones y A sostenido durante las fases de animación; una pulsación enviada no garantiza un punto. La prueba real del LIVE también sigue pendiente.
+
+Procedimiento de ELF: BUILD-WSL.md. Recompilación nativa: build-port.ps1.
