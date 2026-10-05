@@ -1,0 +1,14 @@
+const http=require('http'),fs=require('fs'),path=require('path');
+const extraFiles={'/special-catalog.js':'special-catalog.js','/music-player.js':'music-player.js'};
+const files={'/':'index.html','/pokemon-battle.mp3':'pokemon-battle.mp3','/live-client.js':'live-client.js','/species-extension.js':'species-extension.js','/reward-client.js':'reward-client.js','/arenas.js':'arenas.js','/game-window.js':'game-window.js','/live-actions.js':'live-actions.js','/gifts/rose.png':'gifts/rose.png'};
+for(const name of ['select','battle2','battle3','battle4','victory'])extraFiles['/music/'+name+'.mp3']='music/'+name+'.mp3';
+for(let i=0;i<10;i++)extraFiles['/backgrounds/arena-'+i+'.png']='backgrounds/arena-'+i+'.png';
+extraFiles['/showdown/recipes.js']='showdown/recipes.js';extraFiles['/showdown-fx.js']='showdown-fx.js';for(const effect of Object.values(require('./showdown/effects.json')))extraFiles[effect.url]=effect.url.slice(1);
+for(const f of ['portrait-overlay.js','backgrounds/intro-tournament.png','participant-ui.js','presentation.js','status-fx.js','backgrounds/obstacle-atlas.png','backgrounds/victory-royal.png','obstacles.js','gifts/corn.png','gifts/popular.png'])extraFiles['/'+f]=f;
+for(const f of ['index.html','stadium.ttf','style.css','game.js','scene.js','race-core.js','data.js','pool.png','pool-atlas.png','victory-pool.png','victory.js','specials.js','show.js'])extraFiles['/swimming/'+(f==='index.html'?'':f)]='../kafei-swimming/'+f;
+extraFiles['/overlay']='overlay.html';extraFiles['/overlay/']='overlay.html';
+Object.assign(files,extraFiles);
+http.createServer((req,res)=>{if(require('./reward-api.cjs').accept(req,res))return;if(require('./live-events.cjs').accept(req,res))return;const name=files[new URL(req.url,'http://127.0.0.1').pathname];if(!name){res.writeHead(404);res.end();return}const file=path.join(__dirname,name),size=fs.statSync(file).size,type=name.endsWith('.ttf')?'font/ttf':name.endsWith('.css')?'text/css; charset=utf-8':name.endsWith('.png')?'image/png':name.endsWith('.mp3')?'audio/mpeg':name.endsWith('.js')?'text/javascript; charset=utf-8':'text/html; charset=utf-8';res.setHeader('Content-Type',type);res.setHeader('Cache-Control','no-store');
+if(name.endsWith('.mp3')){res.setHeader('Accept-Ranges','bytes');const range=req.headers.range;if(range){const parts=/bytes=(\d+)-(\d*)/.exec(range);if(!parts){res.writeHead(416);res.end();return}const start=Number(parts[1]),end=parts[2]?Math.min(Number(parts[2]),size-1):size-1;if(start>=size||end<start){res.writeHead(416,{'Content-Range':`bytes */${size}`});res.end();return}res.writeHead(206,{'Content-Length':end-start+1,'Content-Range':`bytes ${start}-${end}/${size}`});fs.createReadStream(file,{start,end}).pipe(res);return}}
+res.setHeader('Content-Length',size);fs.createReadStream(file).pipe(res);
+}).listen(Number(process.env.PORT || 8765),'127.0.0.1',()=>console.log('Battle preview: http://127.0.0.1:8765'));
