@@ -39,7 +39,8 @@ def request(wallet, payload):
             amount = quotient + (i < remainder)
             if db.execute('SELECT 1 FROM balances WHERE user=?', (user,)).fetchone():
                 db.execute('UPDATE balances SET balance=balance+? WHERE user=?', (amount,user))
-                describe(db,user,f'Ganó {game} · ronda {payload["round"]}')
+                label='Premio Magikarp' if game=='magikarp' else 'Premio Natación · equipo ganador'
+                describe(db,user,f'{label} · ronda {payload["round"]}')
                 paid[user] = amount
             else: unpaid[user] = amount
         result = dict(paid=paid, unpaid=unpaid, carry=sum(unpaid.values()))

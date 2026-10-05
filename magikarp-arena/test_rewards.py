@@ -19,6 +19,10 @@ class RewardsTest(unittest.TestCase):
             wallet.set('bea',0)
             self.assertEqual(run('swimming',['ana','bea'])['paid'],{'ana':68,'bea':67})
             self.assertEqual(wallet.balances(),{'ana':158,'bea':67})
+            with wallet.transaction() as db:
+                details=[r[0] for r in db.execute("SELECT detail FROM wallet_history WHERE kind='Recarga'")]
+                self.assertTrue(any('Premio Magikarp · ronda ' in d for d in details))
+                self.assertTrue(any('Premio Natación · equipo ganador · ronda ' in d for d in details))
     def test_invalid_winner_does_not_pay(self):
         with tempfile.TemporaryDirectory() as tmp:
             wallet=Wallet(Path(tmp)/'test.sqlite3'); wallet.set('ana',0)

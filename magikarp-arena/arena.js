@@ -181,7 +181,9 @@ function updateWinner(s){
   const wrap=document.createElement('div');wrap.style.setProperty('--player',player.color);wrap.append(avatar(player));
   const name=document.createElement('div');name.className='name';name.textContent=player.name;wrap.append(name);$('#champions').append(wrap);
  }
- $('#winner-score').textContent=winners.length?`${winners[0].score} golpes al botón · ${s.reward?Object.entries(s.reward.paid).map(([u,n])=>u+': '+n+' K$').join(' · ')+(s.reward.carry?' · Pozo: '+s.reward.carry+' K$':''):s.reward_error?'Premio pendiente':'Ronda de prueba · sin premio'}`:'';
+ $('#winner-score').textContent=winners.length?`${winners[0].score} golpes al botón`:'';
+ let rewardLabel=$('#winner-reward');if(!rewardLabel){rewardLabel=document.createElement('p');rewardLabel.id='winner-reward';$('#winner-score').after(rewardLabel);}
+ rewardLabel.textContent=s.reward?Object.entries(s.reward.paid).map(([u,n])=>u+': '+n+' K$').join(' · ')+(s.reward.carry?' · Pozo siguiente: '+s.reward.carry+' K$':''):s.reward_error?'Premio pendiente':'Ronda de prueba · sin premio';
  if(trophy){trophyScene.remove(trophy);trophy.traverse(m=>{if(m.isMesh)m.material.dispose();});}
  trophy=new THREE.Group();
  winners.forEach((p,i)=>{let fish=templates.magikarp.clone(true);tint(fish,p.color);fish.scale.multiplyScalar(winners.length===1?2.1:winners.length>4?.77:1.12);const cols=Math.min(4,winners.length),rows=Math.ceil(winners.length/cols);fish.position.x=(i%cols-(cols-1)/2)*170;fish.position.y=((rows-1)/2-Math.floor(i/cols))*115;trophy.add(fish);});
