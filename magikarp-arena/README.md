@@ -48,3 +48,7 @@ Para preparar el audio en una instalación nueva, ejecuta `Instalar-musica.ps1` 
 El capturador conserva las antiguas pistas originales para archivo local, pero la sala usa únicamente los MP3 elegidos para inscripción y partida.
 
 La interfaz completa usa el alfabeto original de Stadium de 32 × 32 píxeles, convertido a TrueType por export_font.py desde la ROM local. Incluye letras españolas y nombres, puntuaciones, instrucciones y controles. El símbolo de moneda se deriva de la S original; caracteres Unicode ajenos al juego conservan una fuente de respaldo. El archivo generado local-assets/stadium.ttf no se distribuye.
+
+## Regalos inmediatos
+
+Rose / Rosa activa un salto extra al recibir cada regalo; el punto se resuelve al tocar el botón. Its corn / It's corn / Elote activa puntos dobles durante ocho segundos. Otro elote reinicia el tiempo sin acumular duración. Los combos se procesan por sus incrementos durante el envío, sin esperar al final. Los efectos no se guardan entre rondas. Fuera de la partida o para usuarios no inscritos se rechazan con un estado claro. Cada participante ve el icono temporal y el tiempo del multiplicador. La cola de la interfaz muestra el nombre y el ID recibido de TikTok junto con el efecto aplicado, sin asignación o el motivo de rechazo. Go Popular queda sin asignación en Magikarp.

@@ -53,6 +53,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/health': return self.respond(200, dict(ok=True, app='stadiumfei-magikarp', assets=(ROOT/'local-assets/models.json').is_file()))
         files={'/':'arena.html','/arena.js':'arena.js','/music.js':'music.js','/style.css':'style.css','/control':'control.html',
             '/fonts/stadium.ttf':'local-assets/stadium.ttf',
+            '/assets/rose.png':'assets/rose.png','/assets/corn.png':'assets/corn.png',
             '/assets/kafeacuario.png':'assets/kafeacuario.png',
             '/countdown/3.png':'local-assets/countdown-3.png','/countdown/2.png':'local-assets/countdown-2.png',
             '/countdown/1.png':'local-assets/countdown-1.png','/countdown/go.png':'local-assets/countdown-go.png',
@@ -76,7 +77,9 @@ class Handler(BaseHTTPRequestHandler):
             data=json.loads(self.rfile.read(length))
             if not isinstance(data,dict): raise ValueError('Solicitud inválida')
             path=urlsplit(self.path).path
-            if path=='/api/event': arena.event(data)
+            if path=='/api/event':
+                result=arena.event(data)
+                return self.respond(200,dict(ok=True,**(result or {})))
             elif path=='/api/control':
                 action=data.get('action')
                 if action=='room':
@@ -100,6 +103,12 @@ class Handler(BaseHTTPRequestHandler):
                 elif action=='demo_taps':
                     for p in list(arena.players.values()):
                         if p['id'].startswith('demo'): arena.event(dict(kind='like',user=p['id'],count=(p['slot']+1)*10))
+                elif action=='demo_gift':
+                    user=arena.identity(data.get('user'))
+                    if user not in arena.players or not arena.players[user]['testParticipant']:raise ValueError('Selecciona un jugador de prueba')
+                    if data.get('gift') not in ('Rose','Its corn'):raise ValueError('Regalo de prueba inválido')
+                    result=arena.event(dict(kind='gift',user=user,gift=data['gift'],count=1))
+                    return self.respond(200,dict(ok=True,**result))
                 else: raise ValueError('Acción no válida')
             else: return self.respond(404,dict(error='Ruta no válida'))
             return self.respond(200,dict(ok=True))

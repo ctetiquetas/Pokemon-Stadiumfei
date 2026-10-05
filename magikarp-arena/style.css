@@ -44,3 +44,5 @@ footer{padding-top:18px;gap:8px}footer strong{font-size:36px}footer span{font-si
 .next{font-size:36px;margin-top:24px;line-height:1.3}
 #winner.multi h2{font-size:110px}#winner.multi #champions .name{font-size:34px}#winner.multi #trophy{height:320px}
 #winner.multi #winner-score{font-size:54px}#winner.multi #winner-reward{font-size:33px}.multi .rank{font-size:40px;padding:14px 24px}
+.gift-effect{position:absolute;left:24px;right:24px;top:105px;z-index:3;display:flex;align-items:center;justify-content:center;gap:12px;border:2px solid #ffe18c99;border-radius:18px;padding:9px 12px;background:#06334ee8;color:#ffe18c;font-size:27px;line-height:1.3;box-shadow:0 5px 14px #0006;animation:gift-pop .22s ease-out}.gift-effect img{width:50px;height:50px;object-fit:contain}.gift-effect span{white-space:nowrap}@keyframes gift-pop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.gift-effect{top:calc(86px * var(--identity-scale,1) + 25px)}

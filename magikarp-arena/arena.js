@@ -167,7 +167,9 @@ function entityFor(player){
  const points=document.createElement('div');points.className='points';
  const progress=document.createElement('div');progress.className='progress';
  const bar=document.createElement('div');bar.className='bar';card.append(identity,points,progress,bar);
- cards.set(player.id,{card,points,progress});layout();return entity;
+ const gift=document.createElement('div');gift.className='gift-effect';gift.hidden=true;
+ const icon=document.createElement('img');icon.alt='';const label=document.createElement('span');gift.append(icon,label);card.append(gift);
+ cards.set(player.id,{card,points,progress,gift,icon,label});layout();return entity;
 }
 function updateWinner(s){
  const key=s.round+':'+s.winners.join(',')+':'+JSON.stringify(s.reward)+':'+s.reward_error;if(key===winnerKey)return;winnerKey=key;
@@ -206,7 +208,13 @@ function update(s){
  for(const player of s.players){
   entityFor(player);const c=cards.get(player.id);
   c.points.innerHTML=`<b>${player.score}</b>`;
-  c.progress.textContent=`${player.remainder}/10 taps · ${player.score} puntos`;
+   c.progress.textContent=`${player.remainder}/10 taps · ${player.score} puntos`;
+   const doubling=player.double_remaining>0&&s.phase==='playing';
+   c.gift.hidden=!player.gift_visible&&!doubling;
+   const effect=player.gift_visible?player.gift_effect:doubling?'corn':player.gift_effect;
+   c.icon.src='/assets/'+(effect==='corn'?'corn':'rose')+'.png';
+   c.icon.alt=effect==='corn'?'Elote':'Rosa';
+   c.label.textContent=effect==='rose'&&player.gift_visible?'¡Salto extra!'+(doubling?' · ×2':''):doubling?`Puntos ×2 · ${Math.ceil(player.double_remaining)}s`:'¡Salto extra!';
   c.card.style.setProperty('--progress',player.remainder*10+'%');
  }
  $('#error').hidden=true;
@@ -242,7 +250,8 @@ function frame(now){
   }
   for(const p of state.players){
    const e=entities.get(p.id);if(!e)continue;
-   const age=p.jump_age===null?null:p.jump_age+elapsed;
+   const giftAge=p.gift_jump_age===null||p.gift_jump_age===undefined?null:p.gift_jump_age+elapsed;
+   const age=giftAge!==null&&giftAge<state.jump_seconds?giftAge:p.jump_age===null?null:p.jump_age+elapsed;
    if(age!==null&&age<state.jump_seconds)jumpPose(e.fish,age);
    else pose(e.fish,'0',(now*.03+p.slot*3)%models.magikarp.animations['0'].length);
    buttonPose(e.button,p.score,age);

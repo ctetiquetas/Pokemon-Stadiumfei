@@ -19,7 +19,7 @@ if ($LASTEXITCODE -ne 0) {
     git -C $Shipwright apply --ignore-space-change $patch
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo aplicar la integración' }
 }
-foreach ($name in 'stadium_minuto29.py','magikarp_live.py') {
+foreach ($name in 'stadium_minuto29.py','magikarp_live.py','magikarp_gifts.py') {
     Copy-Item (Join-Path $PSScriptRoot $name) (Join-Path $Shipwright "tools\tiktok-live-bridge\$name") -Force
 }
 Write-Host 'Integración instalada. Reinicia la interfaz TikTok y abre Minuto 29 → Magikarp.'
