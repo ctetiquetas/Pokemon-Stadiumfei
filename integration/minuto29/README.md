@@ -1,13 +1,9 @@
-# Magikarp en Minuto 29
+# Minuto 29 → Magikarp
 
-Integración con la interfaz existente de Shipwright. Utiliza sus eventos LikeEvent de TikTok; 10 taps acumulados = una pulsación A del jugador 1.
+Seleccionar **Magikarp** abre la ventana vertical del juego para doce jugadores. **Conectar al LIVE**, **Nueva sala**, **Comenzar ronda** y **Terminar y mostrar ganador** están en el mismo panel. Los participantes escriben `!unir`; cada diez taps propios producen un salto.
 
-En la interfaz: **Minuto 29 → Magikarp → Abrir Pokémon Stadium → Conectar al LIVE**. Entra manualmente a Kids’ Club y comienza Magikarp; después pulsa **Activar taps**. Pausa al terminar la ronda. **Probar +10 taps** verifica el control sin un LIVE.
+La sala usa los modelos, texturas y animaciones originales extraídos de la ROM local. Consulta [el juego y sus instrucciones](../../magikarp-arena/README.md). Para OBS: `http://127.0.0.1:4390/`, 1080 × 1920.
 
-Captura la ventana de Pokémon Stadium desde OBS o TikTok LIVE Studio para transmitirla. El botón conecta el control al LIVE; la emisión de vídeo se configura en tu programa de transmisión.
+`Instalar.ps1` instala los módulos en la interfaz de Shipwright. `app.patch` contiene solo los cambios de esta integración. `legacy-app.patch` permite actualizar la integración anterior de un solo jugador. La aplicación debe reiniciarse después de instalar. Battle Royal y Carrera de agua mantienen sus controles.
 
-La aplicación debe reiniciarse después de instalar. Los módulos se copian a `Shipwright/tools/tiktok-live-bridge/` y `app.patch` contiene solamente los cambios del botón y el reenvío de taps. Usa `Instalar.ps1` para reinstalar. Battle Royal y Carrera de agua conservan sus controles originales.
-
-El port se busca en la carpeta hermana `PokemonStadiumRecomp/build/PokemonStadiumRecomp.exe`, con la ROM local `PokemonStadiumRecomp/baserom.z64`. No se incluyen ROMs ni binarios del juego.
-
-Pruebas: `python -m unittest test_stadium_backend.py`. Se verifica acumulación, resto, pausa y desconexión. La puntuación dentro de una ronda de Magikarp y los eventos de un LIVE real aún requieren prueba con el usuario. Ajusta la duración de A y el intervalo en el panel si el salto necesita otro ritmo.
+Los archivos `stadium_backend.py` y su prueba conservan el puente anterior de control A como referencia; la nueva opción Magikarp utiliza `magikarp_live.py` y la sala multijugador.

@@ -6,19 +6,89 @@
  from pokemon_bridge import forward as pokemon_forward, open_battle, control_battle, profile_image
 -from minuto29 import open_minuto29
 +from stadium_minuto29 import open_minuto29
-+from stadium_backend import forward_likes as stadium_forward_likes
++from magikarp_live import forward as magikarp_forward, active as magikarp_active
  import unicodedata
  import re
  import time
-@@ -286,6 +287,7 @@
+@@ -41,7 +42,7 @@
+     sys.path.insert(0, str(_vendor))
+ 
+ from TikTokLive import TikTokLiveClient
+-from TikTokLive.events import CommentEvent, ConnectEvent, GiftEvent, LikeEvent
++from TikTokLive.events import CommentEvent, ConnectEvent, DisconnectEvent, GiftEvent, LikeEvent
+ 
+ 
+ ENEMIES = [{'id': -1, 'params': 0, 'name': 'Derrota instantánea de Link', 'icon': '◆', 'description': 'Derrota instantánea de Link', 'effect': 'defeat'}, {'id': -2, 'params': 0, 'name': 'Empuje a Link', 'icon': '◆', 'description': 'Empuje a Link', 'effect': 'push'}, {'id': 16, 'params': 0, 'name': 'Bomba', 'icon': '◆', 'description': 'Bomba'}, {'id': 19, 'params': 2, 'name': 'Keese normal', 'icon': '◆', 'description': 'Keese normal'}, {'id': 19, 'params': 1, 'name': 'Keese de fuego', 'icon': '◆', 'description': 'Keese de fuego'}, {'id': 19, 'params': 4, 'name': 'Keese de hielo', 'icon': '◆', 'description': 'Keese de hielo'}, {'id': 432, 'params': 0, 'name': 'Stalchild', 'icon': '◆', 'description': 'Stalchild'}, {'id': 27, 'params': -1, 'name': 'Tektite rojo', 'icon': '◆', 'description': 'Tektite rojo'}, {'id': 431, 'params': 65280, 'name': 'Wolfos', 'icon': '◆', 'description': 'Wolfos'}, {'id': 2, 'params': 2, 'name': 'Stalfos', 'icon': '◆', 'description': 'Stalfos'}, {'id': 275, 'params': 2, 'name': 'Iron Knuckle', 'icon': '◆', 'description': 'Iron Knuckle'}, {'id': 221, 'params': 0, 'name': 'Like Like', 'icon': '◆', 'description': 'Like Like'}, {'id': 144, 'params': 32766, 'name': 'Gibdo', 'icon': '◆', 'description': 'Gibdo'}, {'id': 289, 'params': 0, 'name': 'Freezard', 'icon': '◆', 'description': 'Freezard'}]
+@@ -163,6 +164,7 @@
+     dispatch_tasks = []
+     tap_remainder = 0
+     gift_remainders = {}
++    magikarp_heartbeat_task = None
+ 
+     def emit(kind: str, **payload: object) -> None:
+         with status_file.open("a", encoding="utf-8", newline="\n") as stream:
+@@ -172,11 +174,20 @@
+ 
+     client = TikTokLiveClient(unique_id=f"@{username.lstrip('@')}")
+ 
++    async def magikarp_heartbeat():
++        while client.connected:
++            magikarp_forward('connection', message=f'LIVE conectado: @{username.lstrip("@")}')
++            await asyncio.sleep(2)
++
+     @client.on(ConnectEvent)
+     async def on_connect(event: ConnectEvent) -> None:
++        nonlocal magikarp_heartbeat_task
+         if not dispatch_tasks:
+             dispatch_tasks.extend([asyncio.create_task(delivery.send()), asyncio.create_task(delivery.watch_cancellations())])
++        if magikarp_heartbeat_task is None or magikarp_heartbeat_task.done():
++            magikarp_heartbeat_task=asyncio.create_task(magikarp_heartbeat())
+         emit("live", account=event.unique_id)
++        magikarp_forward('connection', message=f'LIVE conectado: @{event.unique_id}')
+         raw_gifts = getattr(client, "gift_info", {}) or {}
+         values = raw_gifts.get("gifts", []) if isinstance(raw_gifts, dict) else raw_gifts
+         names = sorted({str(item.get("name", "")) if isinstance(item, dict) else str(getattr(item, "name", "")) for item in values if (item.get("name", "") if isinstance(item, dict) else getattr(item, "name", ""))}, key=str.casefold)
+@@ -187,7 +198,10 @@
+     async def on_comment(event: CommentEvent) -> None:
+         sender = getattr(event.user, "nickname", None) or tiktok_user_id(event.user) or "TikTok"
+         emit("chat", sender=sender, message=event.comment)
+-        pokemon_forward('comment', tiktok_user_id(event.user), message=str(event.comment), avatar=profile_image(event.user))
++        if magikarp_active():
++            magikarp_forward('comment', tiktok_user_id(event.user), name=sender, message=str(event.comment), avatar=profile_image(event.user))
++        else:
++            pokemon_forward('comment', tiktok_user_id(event.user), message=str(event.comment), avatar=profile_image(event.user))
+         comment = str(event.comment).strip()
+         if re.match(r'^!unir(?:\s|$)', comment, re.IGNORECASE) or comment.casefold() == '!especial':
+             return
+@@ -286,6 +300,9 @@
      @client.on(LikeEvent)
      async def on_like(event):
          nonlocal tap_remainder
-+        stadium_forward_likes(max(0, int(event.count or 0)))
++        if magikarp_active():
++            magikarp_forward('like', tiktok_user_id(event.user), count=max(0, int(event.count or 0)))
++            return
          pokemon_forward('like', tiktok_user_id(event.user), count=max(0, int(event.count or 0)), avatar=profile_image(event.user))
          try:
              settings = json.loads((Path(mapping_argument).parent / 'game-settings.json').read_text(encoding='utf-8'))
-@@ -454,7 +456,7 @@
+@@ -303,12 +320,17 @@
+                                          "jobId": 'tap-' + str(time.time_ns()), "sequence": 1, "total": 1}) + "\n")
+             emit("tap_heal", sender=sender, quarters=quarters)
+ 
++    @client.on(DisconnectEvent)
++    async def on_magikarp_disconnect(event):
++        magikarp_forward('connection', message='LIVE desconectado')
++
+     try:
+         run_live(client, emit)
+     except KeyboardInterrupt:
+         pass
+     except Exception as error:
+         emit("error", message=str(error))
++        magikarp_forward('connection', message=f'LIVE desconectado: {error}')
+         raise SystemExit(1)
+ 
+ 
+@@ -454,7 +476,7 @@
          actions.grid(row=3, column=0, columnspan=5, sticky='w', pady=(6,0))
          ttk.Button(actions, text="Seleccionar port…", command=self.choose_game_executable).pack(side="left")
          ttk.Button(actions, text="Abrir juego", command=lambda: self.launch_game(Path(self.event_file.get()))).pack(side="left", padx=8)
@@ -27,7 +97,7 @@
          ttk.Button(actions, text="Ver port y datos", command=self.show_game_paths).pack(side="left")
          ttk.Button(actions, text="Seleccionar disco de Wind Waker…", command=self.choose_wind_waker).pack(side='left', padx=8)
          connection.columnconfigure(3, weight=1)
-@@ -1169,7 +1171,12 @@
+@@ -1169,7 +1191,12 @@
          self.led.itemconfigure(self.led_dot, fill=color)
          self.status_label.set(text)
  
@@ -41,7 +111,7 @@
          account = self.account.get().strip().lstrip("@")
          destination = self.event_file.get().strip()
          if not account or not destination:
-@@ -1186,7 +1193,7 @@
+@@ -1186,7 +1213,7 @@
          self.queue_items.clear()
          self.queue_sent_at.clear()
          self.queue_tree.delete(*self.queue_tree.get_children())
@@ -50,3 +120,11 @@
              return
          if getattr(sys, "frozen", False):
              command = [sys.executable, "--bridge", account, destination, str(self.mapping_file), str(self.status_file), str(self.wallet_file)]
+@@ -1534,6 +1561,7 @@
+                     self.log.config(text=f"Se cargaron {len(gifts)} regalos disponibles del LIVE.")
+ 
+     def stop(self) -> None:
++        magikarp_forward('connection', message='LIVE detenido por el anfitrión')
+         if self.process and self.process.poll() is None:
+             self.process.terminate()
+         self.process = None
