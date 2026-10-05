@@ -173,7 +173,7 @@ function updateWinner(s){
  const key=s.round+':'+s.winners.join(',')+':'+JSON.stringify(s.reward)+':'+s.reward_error;if(key===winnerKey)return;winnerKey=key;
  const winners=s.players.filter(p=>s.winners.includes(p.id));
  $('#winner').classList.toggle('multi',winners.length>1);
- const trophyHeight=winners.length>1?400:540;
+ const trophyHeight=winners.length>1?320:420;
  trophyRenderer.setSize(930,trophyHeight,false);trophyCamera.aspect=930/trophyHeight;trophyCamera.updateProjectionMatrix();
  $('#winner-title').textContent=winners.length>1?'¡EMPATE!':'¡GANADOR!';
  $('#champions').replaceChildren();
@@ -186,7 +186,7 @@ function updateWinner(s){
  rewardLabel.textContent=s.reward?Object.entries(s.reward.paid).map(([u,n])=>u+': '+n+' K$').join(' · ')+(s.reward.carry?' · Pozo siguiente: '+s.reward.carry+' K$':''):s.reward_error?'Premio pendiente':'Ronda de prueba · sin premio';
  if(trophy){trophyScene.remove(trophy);trophy.traverse(m=>{if(m.isMesh)m.material.dispose();});}
  trophy=new THREE.Group();
- winners.forEach((p,i)=>{let fish=templates.magikarp.clone(true);tint(fish,p.color);fish.scale.multiplyScalar(winners.length===1?2.1:winners.length>4?.77:1.12);const cols=Math.min(4,winners.length),rows=Math.ceil(winners.length/cols);fish.position.x=(i%cols-(cols-1)/2)*170;fish.position.y=((rows-1)/2-Math.floor(i/cols))*115;trophy.add(fish);});
+ winners.forEach((p,i)=>{let fish=templates.magikarp.clone(true);tint(fish,p.color);fish.scale.multiplyScalar(winners.length===1?2.7:winners.length>4?.77:1.12);const cols=Math.min(4,winners.length),rows=Math.ceil(winners.length/cols);fish.position.x=(i%cols-(cols-1)/2)*170;fish.position.y=((rows-1)/2-Math.floor(i/cols))*115;trophy.add(fish);});
  trophyScene.add(trophy);
  $('#podium').replaceChildren();
  [...s.players].sort((a,b)=>b.score-a.score||a.slot-b.slot).slice(0,5).forEach((p,i)=>{
