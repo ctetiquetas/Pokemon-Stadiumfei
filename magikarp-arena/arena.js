@@ -196,8 +196,8 @@ function update(s){
  updateMusic(s);
  state=s;received=performance.now();
  if(round!==s.round){round=s.round;reset();winnerKey='';}
- $('#phase').textContent={lobby:`SALA ABIERTA · ${s.players.length}/12`,countdown:'¡PREPÁRATE!',playing:'RONDA EN MARCHA',finished:'RONDA TERMINADA'}[s.phase];
- $('#instruction').textContent=s.phase==='lobby'?'Escribe !unir en el chat para jugar':s.phase==='finished'?'¡Gracias por participar!':'¡Toca la pantalla para hacer saltar a tu Magikarp!';
+ $('#phase').textContent={lobby:`SALA ABIERTA · ${s.players.length}/12`,countdown:'¡PREPÁRATE!',playing:'RONDA EN MARCHA',ending:'¡TIEMPO!',finished:'RONDA TERMINADA'}[s.phase];
+ $('#instruction').textContent=s.phase==='lobby'?'Escribe !unir en el chat para jugar':s.phase==='ending'?'¡Se acabó el tiempo!':s.phase==='finished'?'¡Gracias por participar!':'¡Toca la pantalla para hacer saltar a tu Magikarp!';
  $('#connection').textContent=s.connection;
  $('#winner').hidden=s.phase!=='finished';
  if(s.phase==='finished')updateWinner(s);
@@ -219,16 +219,18 @@ function frame(now){
  requestAnimationFrame(frame);
  if(state){
   const elapsed=(now-received)/1000,remaining=Math.max(0,state.remaining-elapsed);
-  $('#timer').textContent=state.phase==='lobby'?'!unir':state.phase==='finished'?'FIN':`${Math.ceil(remaining)}s`;
+  $('#timer').textContent=state.phase==='lobby'?'!unir':['ending','finished'].includes(state.phase)?'FIN':`${Math.ceil(remaining)}s`;
   const playAge=state.duration-remaining;
   const countdown=state.phase==='countdown',go=state.phase==='playing'&&playAge<.9;
-  $('#countdown').hidden=!countdown&&!go;
-  if(countdown||go){
-   const digit=go?'go':String(Math.max(1,Math.min(3,Math.ceil(remaining/.9))));
+  const closing=state.phase==='playing'&&remaining>0&&remaining<=2.7;
+  $('#countdown').hidden=!countdown&&!go&&!closing;
+  if(countdown||go||closing){
+   const beat=Math.max(1,Math.min(3,Math.ceil(remaining/.9)));
+   const digit=go?'go':String(closing?4-beat:beat);
    const img=$('#countdown img'),src='/countdown/'+digit+'.png';
    if(img.getAttribute('src')!==src){img.src=src;img.alt=go?'¡Comienza!':digit;}
    // fragment2 func_87802360: original 27-frame pop and exit squash.
-   const beatRemaining=countdown?remaining-(Number(digit)-1)*.9:.9-playAge;
+   const beatRemaining=countdown||closing?remaining-(beat-1)*.9:.9-playAge;
    const ticks=Math.max(0,Math.min(27,Math.ceil(beatRemaining*30)));
    let sx=0,sy=0;
    if(ticks>=18){const angle=Math.trunc((1-(27-ticks)/10)*81920);const shrink=.5*(angle<=65536?.25:1)*Math.abs(Math.sin((angle&65535)/65536*Math.PI*2));sx=sy=1-shrink;}

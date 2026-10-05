@@ -10,7 +10,7 @@ def command(port, **data):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--port',type=int,default=4372)
     p.add_argument('--assets',type=Path,default=Path(__file__).parent/'local-assets')
-    p.add_argument('--only',choices=['lobby','playing','winner','countdown','jump','hit'])
+    p.add_argument('--only',choices=['lobby','playing','winner','countdown','jump','hit','buzzer'])
     a=p.parse_args();a.assets.mkdir(exist_ok=True,parents=True)
     request=a.assets/'music-request.txt';log=a.assets/'music-capture.log'
     # Let the boot/title scene finish assigning its own background music.
@@ -24,7 +24,7 @@ def main():
         while f'serial={serial} song={song}' not in log.read_text(errors='replace'):
             if time.monotonic()>deadline:raise RuntimeError('El hook de música no respondió')
             time.sleep(.05)
-    for name,song,seconds in [('lobby',0x16,65),('playing',10,65),('winner',0x1A,8),('countdown',0x20001,2),('jump',0x20006,2),('hit',0x20008,2)]:
+    for name,song,seconds in [('lobby',0x16,65),('playing',10,65),('winner',0x1A,8),('countdown',0x20001,2),('jump',0x20006,2),('hit',0x20008,2),('buzzer',0x20009,3)]:
         if a.only and a.only!=name:continue
         for attempt in range(4):
             request_sound(-1);time.sleep(1)

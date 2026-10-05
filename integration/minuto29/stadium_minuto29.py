@@ -40,12 +40,10 @@ def open_minuto29(parent,start_live=None,stop_live=None,account=None):
         ttk.Button(controls,text='Abrir pantalla vertical 9:16',command=lambda:guarded(magikarp_live.open_arena)).pack(fill='x',pady=4)
         live_label='Conectar al LIVE'+(f' de @{account.get().lstrip("@")}' if account is not None else '')
         ttk.Button(controls,text=live_label,command=lambda:guarded(start_live),state='normal' if start_live else 'disabled').pack(fill='x',pady=4)
-        duration=tk.IntVar(value=60);timing=ttk.Frame(controls);timing.pack(pady=6)
-        ttk.Label(timing,text='Duración de la ronda (segundos):').pack(side='left')
-        ttk.Entry(timing,textvariable=duration,width=6).pack(side='left',padx=8)
+        ttk.Label(controls,text='La ronda termina con Magikarps.mp3.\nDitto inverso → timbre → ganador.',wraplength=490).pack(pady=6)
         ttk.Button(controls,text='Nueva sala de inscripción',command=lambda:guarded(lambda:magikarp_live.control('room'))).pack(fill='x',pady=4)
-        ttk.Button(controls,text='Comenzar ronda',command=lambda:guarded(lambda:magikarp_live.control('start',duration.get()))).pack(fill='x',pady=4)
-        ttk.Button(controls,text='Terminar y mostrar ganador',command=lambda:guarded(lambda:magikarp_live.control('finish'))).pack(fill='x',pady=4)
+        ttk.Button(controls,text='Comenzar ronda',command=lambda:guarded(lambda:magikarp_live.control('start'))).pack(fill='x',pady=4)
+        ttk.Button(controls,text='Terminar ronda',command=lambda:guarded(lambda:magikarp_live.control('finish'))).pack(fill='x',pady=4)
         if stop_live:
             def stop():
                 stop_live()

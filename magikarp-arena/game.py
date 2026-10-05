@@ -10,8 +10,10 @@ HIT_SECONDS = 10 / 30  # Frame 2 of clip 14, after both four-frame takeoffs.
 
 
 class Arena:
-    def __init__(self, clock=time.monotonic):
+    def __init__(self, clock=time.monotonic, round_duration=60, ending_seconds=0):
         self.clock = clock
+        self.round_duration=round_duration
+        self.ending_seconds=ending_seconds
         self.lock = threading.RLock()
         self.revision = 0
         self.connection = 'Sin conexión al LIVE'
@@ -25,7 +27,8 @@ class Arena:
             self.phase = 'lobby'
             self.round_id = getattr(self, 'round_id', 0) + 1
             self.starts = self.ends = None
-            self.duration = 60
+            self.duration = self.round_duration
+            self.result_at = None
             self.revision += 1
 
     @staticmethod
@@ -60,11 +63,12 @@ class Arena:
                 player['pending'] += presses
                 self.tick()
 
-    def start(self, duration=60):
+    def start(self, duration=None):
         with self.lock:
             if self.phase != 'lobby': raise ValueError('Abre una nueva sala antes de comenzar')
             if not self.players: raise ValueError('Necesitas al menos un participante')
-            if type(duration) is not int or not 10 <= duration <= 300: raise ValueError('Duración: 10 a 300 segundos')
+            if duration is None:duration=self.round_duration
+            if type(duration) not in (int,float) or not 1 <= duration <= 3600: raise ValueError('Duración de audio inválida')
             self.duration = duration
             self.starts = self.clock() + 2.7  # Three original 27-frame Ditto beats at 30 FPS.
             self.ends = self.starts + duration
@@ -75,13 +79,19 @@ class Arena:
         with self.lock:
             self.tick()
             if self.phase not in ('playing', 'countdown'): return
-            self.phase = 'finished'
-            for p in self.players.values(): p['pending'] = 0; p['jump_start'] = None
-            self.revision += 1
+            self.close_round(self.clock())
+
+    def close_round(self, now):
+        self.phase = 'ending' if self.ending_seconds else 'finished'
+        self.result_at=now+self.ending_seconds
+        self.ends=now
+        for p in self.players.values(): p['pending'] = 0; p['jump_start'] = None
+        self.revision += 1
 
     def tick(self):
         with self.lock:
             now = self.clock()
+            if self.phase=='ending' and now>=self.result_at:self.phase='finished';self.revision+=1
             if self.connection_seen is not None and now-self.connection_seen>8:
                 self.connection='Sin conexión al LIVE (esperando reconexión)'
             if self.phase == 'countdown' and now >= self.starts: self.phase = 'playing'
@@ -101,9 +111,7 @@ class Arena:
                         p['pending'] -= 1; p['jump_start'] = start + JUMP_SECONDS; p['hit'] = False; p['jumps'] += 1
                     else: break
             if now >= self.ends:
-                self.phase = 'finished'
-                for p in self.players.values(): p['pending'] = 0; p['jump_start'] = None
-                self.revision += 1
+                self.close_round(now)
 
     def snapshot(self):
         with self.lock:
@@ -115,5 +123,7 @@ class Arena:
             winners = [p['id'] for p in ranking if p['score'] == best] if self.phase == 'finished' else []
             return dict(phase=self.phase, round=self.round_id, players=players, winners=winners,
                 remaining=max(0, (self.starts if self.phase == 'countdown' else self.ends or now)-now),
-                duration=self.duration, connection=self.connection, unattributed=self.unattributed,
+                duration=self.duration, music_duration=self.duration+.9,
+                music_elapsed=max(0,min(self.duration+.9,now-(self.starts or now)+.9)),
+                connection=self.connection, unattributed=self.unattributed,
                 revision=self.revision, jump_seconds=JUMP_SECONDS, hit_seconds=HIT_SECONDS)

@@ -19,9 +19,10 @@ const state=(phase,remaining,round=1)=>({phase,remaining,round,duration:60,playe
 updateMusic(state('lobby',0));assert.match(audio.src,/lobby\.mp3/);
 updateMusic(state('countdown',2.7));assert.equal(audio.src,'');
 updateMusic(state('countdown',.901));assert.equal(audio.src,'');
-updateMusic(state('countdown',.9));assert.match(audio.src,/playing\.mp3/);assert.equal(audio.loop,true);
+updateMusic(state('countdown',.9));assert.match(audio.src,/playing\.mp3/);assert.equal(audio.loop,false);
 audio.currentTime=.8;
 updateMusic(state('playing',59.9));assert.equal(audio.currentTime,.8,'El inicio de la ronda no debe reiniciar el MP3');
+updateMusic(state('ending',0));assert.equal(audio.src,'');
 updateMusic(state('finished',0));assert.match(audio.src,/winner\.wav/);assert.equal(audio.loop,false);
 updateMusic(state('lobby',0,2));assert.match(audio.src,/lobby\.mp3/);assert.equal(audio.currentTime,0);
 console.log('MP3 de inscripción, inicio en Ditto 1, continuidad y victoria: OK');

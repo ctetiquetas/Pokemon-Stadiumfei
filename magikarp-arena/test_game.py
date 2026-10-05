@@ -18,6 +18,20 @@ class ArenaTests(unittest.TestCase):
         self.clock.now=2.7;self.taps('uno',10)
         self.assertEqual(self.game.snapshot()['phase'],'playing')
         self.assertEqual(self.game.players['uno']['jumps'],1)
+    def test_song_deadline_freezes_points_then_buzzer_then_winner(self):
+        self.game=Arena(self.clock,round_duration=33.256553,ending_seconds=1.86)
+        self.join();self.game.start()
+        self.assertAlmostEqual(self.game.ends-(self.game.starts-.9),34.156553)
+        deadline=self.game.ends
+        self.clock.now=deadline-.4;self.taps('uno',10)
+        self.clock.now=deadline;state=self.game.snapshot()
+        self.assertEqual(state['phase'],'ending');self.assertEqual(state['winners'],[])
+        self.assertEqual(state['players'][0]['score'],1)
+        self.taps('uno',100);self.assertEqual(self.game.players['uno']['pending'],0)
+        self.clock.now=deadline+1.859;self.assertEqual(self.game.snapshot()['phase'],'ending')
+        self.clock.now=deadline+1.86;state=self.game.snapshot()
+        self.assertEqual(state['phase'],'finished');self.assertEqual(state['winners'],['uno'])
+        self.assertEqual(state['players'][0]['score'],1)
     def test_limit_identity_duplicates_and_late_join(self):
         self.join('@UNO',name='<script>');self.join('uno')
         for i in range(20):self.join(str(i))

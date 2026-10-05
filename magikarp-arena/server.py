@@ -5,12 +5,16 @@ import json
 import mimetypes
 import threading
 import time
+import wave
 from urllib.parse import urlsplit
 from game import Arena
+from audio_duration import mp3_duration
 
 ROOT = Path(__file__).resolve().parent
 PORT = 4390
-arena = Arena()
+with wave.open(str(ROOT/'local-assets/buzzer.wav')) as buzzer:
+    ending_seconds=buzzer.getnframes()/buzzer.getframerate()+.1
+arena = Arena(round_duration=mp3_duration(ROOT/'local-assets/Magikarps.mp3')-.9, ending_seconds=ending_seconds)
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args): pass
@@ -31,6 +35,7 @@ class Handler(BaseHTTPRequestHandler):
             '/countdown/3.png':'local-assets/countdown-3.png','/countdown/2.png':'local-assets/countdown-2.png',
             '/countdown/1.png':'local-assets/countdown-1.png','/countdown/go.png':'local-assets/countdown-go.png',
             '/music/countdown.wav':'local-assets/countdown.wav','/music/jump.wav':'local-assets/jump.wav','/music/hit.wav':'local-assets/hit.wav',
+            '/music/buzzer.wav':'local-assets/buzzer.wav',
             '/music/lobby.mp3':'local-assets/Menumusic.mp3','/music/playing.mp3':'local-assets/Magikarps.mp3','/music/winner.wav':'local-assets/winner.wav',
             '/models.json':'local-assets/models.json','/vendor/three.module.js':'node_modules/three/build/three.module.js',
             '/vendor/three.core.js':'node_modules/three/build/three.core.js'}
@@ -52,7 +57,9 @@ class Handler(BaseHTTPRequestHandler):
             elif path=='/api/control':
                 action=data.get('action')
                 if action=='room': arena.new_room()
-                elif action=='start': arena.start(data.get('duration',60))
+                elif action=='start':
+                    arena.round_duration=mp3_duration(ROOT/'local-assets/Magikarps.mp3')-.9
+                    arena.start()
                 elif action=='finish': arena.finish()
                 elif action=='demo':
                     if arena.phase!='lobby': raise ValueError('La demo se carga en una sala nueva')

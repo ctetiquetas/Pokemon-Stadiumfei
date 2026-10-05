@@ -1,6 +1,6 @@
 # Magikarp · Minuto 29
 
-Sala vertical 9:16 para TikTok LIVE y OBS. Hasta 12 espectadores escriben `!unir` para entrar. Cada participante conserva sus propios taps, nombre, foto y color; cada 10 taps identificados del jugador generan un salto. El marcador suma +1 cuando el salto golpea el botón. La ronda tiene cuenta regresiva, duración ajustable de 10 a 300 segundos y pantalla final del ganador. Los empates muestran a los participantes empatados.
+Sala vertical 9:16 para TikTok LIVE y OBS. Hasta 12 espectadores escriben `!unir` para entrar. Cada participante conserva sus propios taps, nombre, foto y color; cada 10 taps identificados del jugador generan un salto. El marcador suma +1 cuando el salto golpea el botón. La duración se calcula desde `Magikarps.mp3`: la ronda termina al acabar la canción. Los empates muestran a los participantes empatados.
 
 ## Gráficos originales
 
@@ -35,12 +35,14 @@ Pruebas automáticas: `python -m unittest test_game.py`. Se verifican límite de
 
 ## Música y efectos
 
-La inscripción reproduce el archivo local `Menumusic.mp3`. Al comenzar la cuenta regresiva se detiene el menú; cuando Ditto muestra el **1** (últimos 0,9 segundos), comienza `Magikarps.mp3` y continúa durante la competencia sin reiniciarse al salir Ditto. Ambos MP3 se repiten cuando llegan al final. Las antiguas pistas WAV de menú y partida ya no se usan. El ganador conserva la fanfarria original (0x1A), una sola vez por resultado. La cuenta, salto e impacto conservan los efectos originales 0x20001, 0x20006 y 0x20008.
+La inscripción reproduce el archivo local `Menumusic.mp3` en bucle. Al comenzar la cuenta regresiva se detiene el menú; cuando Ditto muestra el **1** (últimos 0,9 segundos), comienza `Magikarps.mp3` y continúa durante la competencia sin reiniciarse al salir Ditto. La canción de partida se reproduce una sola vez. `audio_duration.py` lee los fotogramas MP3 y el recorte de codificación Xing/LAME: el archivo actual dura 34,156553 segundos y quedan 33,256553 segundos de juego después de la salida. El servidor relee la duración al comenzar cada ronda y sincroniza los reproductores con su reloj.
+
+En los últimos 2,7 segundos se muestran las imágenes de Ditto en orden inverso **1 → 2 → 3**, con los efectos de aviso originales. Al finalizar el MP3 se congelan los puntos y suena el timbre original **0x20009**. La pantalla del ganador y su fanfarria (0x1A) aparecen después del timbre. Los controles ya no permiten elegir una duración manual. La cuenta, salto e impacto conservan los efectos originales 0x20001, 0x20006 y 0x20008. `python check_music_round.py` verifica la secuencia completa en una sala local con jugadores de prueba.
 
 Ejecuta `Instalar-musica.ps1` para copiar `Menumusic.mp3` y `Magikarps.mp3` desde Descargas a `local-assets/`. Acepta `-MenuFile` y `-PlayingFile` para otras rutas. Los MP3 se guardan solo en el equipo y quedan ignorados por Git. Recarga la ventana del juego y la fuente OBS después de cambiar los archivos.
 
 El control ♫ permite activar, silenciar y ajustar el volumen. Si el navegador impide el inicio automático, pulsa Activar música. En OBS activa **Controlar audio mediante OBS** en la fuente navegador y comprueba su mezclador. `node test_music.mjs` verifica el inicio en el 1, la continuidad de la canción al comenzar la partida y el cambio de ronda.
 
-Para regenerar la música y los efectos, cierra el port y ejecuta `Capturar-musica.ps1`. Instala hooks opcionales, compila el port e inicia una instancia de captura. Durante la captura bloquea los sonidos de la demostración automática para evitar mezclarlos con las tomas; guarda las tres pistas y los tres efectos en `local-assets/`. Requiere el port ya configurado para compilar. Los hooks solo se activan cuando se define `STADIUMFEI_MUSIC_REQUEST`. No se suben la música ni los recursos del juego al repositorio.
+Para preparar el audio en una instalación nueva, ejecuta `Instalar-musica.ps1` y `Capturar-musica.ps1` antes de abrir la sala. Para regenerar los efectos, cierra el port y ejecuta `Capturar-musica.ps1`. Instala hooks opcionales, compila el port e inicia una instancia de captura. Durante la captura bloquea los sonidos de la demostración automática para evitar mezclarlos con las tomas; guarda las tres pistas y los cuatro efectos, incluido `buzzer.wav`, en `local-assets/`. Requiere el port ya configurado para compilar. Los hooks solo se activan cuando se define `STADIUMFEI_MUSIC_REQUEST`. No se suben la música ni los recursos del juego al repositorio.
 
 El capturador conserva las antiguas pistas originales para archivo local, pero la sala usa únicamente los MP3 elegidos para inscripción y partida.
