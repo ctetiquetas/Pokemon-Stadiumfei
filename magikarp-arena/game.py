@@ -53,7 +53,7 @@ class Arena:
                 if not avatar.startswith('https://'): avatar = ''
                 self.players[uid] = dict(id=uid, name=str(data.get('name') or uid)[:64], avatar=avatar,
                     color=COLORS[len(self.players)], slot=len(self.players), score=0, remainder=0,
-                    pending=0, jump_start=None, hit=False, jumps=0)
+                    pending=0, jump_start=None, hit=False, jumps=0, testParticipant=bool(data.get('testParticipant',False)))
                 self.revision += 1
             elif kind == 'like' and self.phase == 'playing' and uid in self.players:
                 count = data.get('count', 0)

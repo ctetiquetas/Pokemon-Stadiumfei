@@ -1,6 +1,6 @@
 """Local timing check; never replaces a room containing real participants."""
-import json,time,urllib.request,math
-URL='http://127.0.0.1:4390'
+import json,time,urllib.request,math,os
+URL=os.environ.get('MAGIKARP_TEST_URL','http://127.0.0.1:4390')
 def state():
     return json.load(urllib.request.urlopen(URL+'/api/state',timeout=2))
 def post(path,**data):
@@ -28,6 +28,7 @@ while time.monotonic()<deadline:
         assert ending_at is not None and time.monotonic()-ending_at>=1.5
         assert [p['score'] for p in s['players']]==points==[1,2]
         assert s['winners']==['demo2'] and closing==[3,2,1]
+        assert s.get('reward') is None
         print('Ditto 3 -> 2 -> 1, fin del MP3, timbre y ganador posterior: OK',flush=True)
         break
     time.sleep(.08)

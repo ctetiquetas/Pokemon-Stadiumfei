@@ -6,6 +6,7 @@ import mimetypes
 import threading
 import time
 import wave
+from rewards import request, Wallet, wallet_path
 from urllib.parse import urlsplit
 from game import Arena
 from audio_duration import mp3_duration
@@ -15,6 +16,26 @@ PORT = 4390
 with wave.open(str(ROOT/'local-assets/buzzer.wav')) as buzzer:
     ending_seconds=buzzer.getnframes()/buzzer.getframerate()+.1
 arena = Arena(round_duration=mp3_duration(ROOT/'local-assets/Magikarps.mp3')-.9, ending_seconds=ending_seconds)
+
+reward_round=None
+reward_result=None
+reward_error=None
+reward_retry=0
+
+def state():
+    global reward_result,reward_error,reward_retry
+    with arena.lock:
+        snapshot=arena.snapshot()
+        if snapshot['phase']=='finished' and reward_round and reward_result is None and time.monotonic()>=reward_retry:
+            try:
+                reward_result=request(Wallet(),dict(game='magikarp',action='finish',round=reward_round,winners=snapshot['winners']))
+                reward_error=None
+            except Exception as exc:
+                reward_error=str(exc)
+                reward_retry=time.monotonic()+5
+        snapshot['reward']=reward_result
+        snapshot['reward_error']=reward_error
+        return snapshot
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args): pass
@@ -28,7 +49,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
     def do_GET(self):
         path=urlsplit(self.path).path
-        if path=='/api/state': return self.respond(200, arena.snapshot())
+        if path=='/api/state': return self.respond(200, state())
         if path=='/api/health': return self.respond(200, dict(ok=True, app='stadiumfei-magikarp', assets=(ROOT/'local-assets/models.json').is_file()))
         files={'/':'arena.html','/arena.js':'arena.js','/music.js':'music.js','/style.css':'style.css','/control':'control.html',
             '/assets/kafeacuario.png':'assets/kafeacuario.png',
@@ -43,6 +64,7 @@ class Handler(BaseHTTPRequestHandler):
         if target is None or not target.is_file(): return self.respond(404,dict(error='Archivo no disponible'))
         return self.respond(200,target.read_bytes(),mimetypes.guess_type(target.name)[0] or 'application/octet-stream')
     def do_POST(self):
+        global reward_round,reward_result,reward_error
         # Protect host controls from requests originating on unrelated websites.
         origin=self.headers.get('Origin')
         if origin and origin not in [f'http://127.0.0.1:{PORT}',f'http://localhost:{PORT}']:
@@ -56,16 +78,24 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/event': arena.event(data)
             elif path=='/api/control':
                 action=data.get('action')
-                if action=='room': arena.new_room()
+                if action=='room':
+                    state()
+                    if reward_round and arena.phase=='finished' and reward_result is None: raise ValueError('Hay un premio pendiente; reintenta antes de abrir otra sala')
+                    arena.new_room();reward_round=None;reward_result=None;reward_error=None
                 elif action=='start':
                     arena.round_duration=mp3_duration(ROOT/'local-assets/Magikarps.mp3')-.9
-                    arena.start()
+                    with arena.lock:
+                        if arena.phase!='lobby' or not arena.players: raise ValueError('Necesitas una sala con participantes')
+                        if all(not p['testParticipant'] for p in arena.players.values()):
+                            if not wallet_path().is_file(): raise ValueError('No se encontró la cartera compartida')
+                            reward_round=request(Wallet(),dict(game='magikarp',action='begin',roster=list(arena.players)))['round']
+                        arena.start()
                 elif action=='finish': arena.finish()
                 elif action=='demo':
                     if arena.phase!='lobby': raise ValueError('La demo se carga en una sala nueva')
                     count=data.get('count',12)
                     if type(count) is not int or not 1<=count<=12:raise ValueError('Prueba: de 1 a 12 jugadores')
-                    for i in range(count): arena.event(dict(kind='comment',user=f'demo{i+1}',name=f'Jugador {i+1}',message='!unir'))
+                    for i in range(count): arena.event(dict(kind='comment',user=f'demo{i+1}',name=f'Jugador {i+1}',message='!unir',testParticipant=True))
                 elif action=='demo_taps':
                     for p in list(arena.players.values()):
                         if p['id'].startswith('demo'): arena.event(dict(kind='like',user=p['id'],count=(p['slot']+1)*10))
@@ -76,7 +106,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(400,dict(error=str(e)))
 
 def ticker():
-    while True: arena.tick(); time.sleep(0.02)
+    while True: state(); time.sleep(0.02)
 
 if __name__=='__main__':
     threading.Thread(target=ticker,daemon=True).start()
