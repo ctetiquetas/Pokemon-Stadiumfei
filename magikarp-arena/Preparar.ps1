@@ -9,5 +9,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo instalar el motor 3D' }
     & $arenaPython export_models.py --rom $Rom
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron extraer los gráficos locales' }
+    & $arenaPython export_ui.py --rom $Rom
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo extraer la cuenta regresiva original' }
 } finally { Pop-Location }
 Write-Host 'Magikarp listo. Abre Minuto 29 → Magikarp en tu interfaz TikTok.'

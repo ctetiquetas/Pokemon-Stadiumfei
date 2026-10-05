@@ -10,29 +10,36 @@ def command(port, **data):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--port',type=int,default=4372)
     p.add_argument('--assets',type=Path,default=Path(__file__).parent/'local-assets')
-    p.add_argument('--only',choices=['lobby','playing','winner'])
+    p.add_argument('--only',choices=['lobby','playing','winner','countdown','jump','hit'])
     a=p.parse_args();a.assets.mkdir(exist_ok=True,parents=True)
     request=a.assets/'music-request.txt';log=a.assets/'music-capture.log'
     # Let the boot/title scene finish assigning its own background music.
     # Otherwise it can replace our requested track just after the hook responds.
     print('Esperando a que termine el arranque del port…',flush=True)
-    time.sleep(20)
+    time.sleep(40)
     # Kids' Club selection: fragment39 func_82504370 explicitly starts 0x16.
-    for name,song,seconds in [('lobby',0x16,65),('playing',10,65),('winner',0x1A,24)]:
+    def request_sound(song):
+        serial=int(time.time()*1000)&0xffffffff;request.write_text(f'{serial} {song}',encoding='ascii')
+        deadline=time.monotonic()+25
+        while f'serial={serial} song={song}' not in log.read_text(errors='replace'):
+            if time.monotonic()>deadline:raise RuntimeError('El hook de música no respondió')
+            time.sleep(.05)
+    for name,song,seconds in [('lobby',0x16,65),('playing',10,65),('winner',0x1A,8),('countdown',0x20001,2),('jump',0x20006,2),('hit',0x20008,2)]:
         if a.only and a.only!=name:continue
         for attempt in range(4):
-            serial=int(time.time()*1000)&0xffffffff;request.write_text(f'{serial} {song}',encoding='ascii')
-            deadline=time.monotonic()+25
-            while f'serial={serial} song={song}' not in log.read_text(errors='replace'):
-                if time.monotonic()>deadline:raise RuntimeError('El hook de música no respondió')
-                time.sleep(.1)
+            request_sound(-1);time.sleep(1)
+            if song>79:
+                # The audio thread must finish initializing a newly loaded SFX
+                # bank before queuing the take. Discard the first warm-up cue.
+                request_sound(song);time.sleep(2)
             baseline=command(a.port,cmd='ai_submit_recent',n=1)['write_idx']
+            request_sound(song)
             print(f'Capturando {name}: pista {song}, {seconds}s',flush=True)
             until=time.monotonic()+seconds;changed=False
             while time.monotonic()<until:
                 time.sleep(min(1,max(0,until-time.monotonic())))
                 active=command(a.port,cmd='rdram_peek',addr=0x800FF9B4,n=4)
-                if int(active['hex'],16)!=song:
+                if song<=79 and int(active['hex'],16)!=song:
                     changed=True;break
             if not changed:break
             print('La escena de arranque cambió la música; descartando y reiniciando captura.',flush=True)
@@ -49,6 +56,9 @@ def main():
         rates=re.findall(r'bridge ON\s+src=(\d+)',log.read_text(errors='replace'))
         rate=events[-1]['sample_rate'] if events else int(rates[-1]) if rates else 32000
         if not samples or max(abs(v) for v in samples)<100:raise RuntimeError('Captura silenciosa')
+        audible=[i//2 for i,v in enumerate(samples) if abs(v)>64]
+        begin=max(0,audible[0]-int(rate*.015));end=min(len(samples)//2,audible[-1]+int(rate*.06))
+        samples=samples[begin*2:end*2]
         with wave.open(str(a.assets/f'{name}.wav'),'wb') as output:
             output.setnchannels(2);output.setsampwidth(2);output.setframerate(rate);output.writeframes(samples.tobytes())
         raw.unlink()

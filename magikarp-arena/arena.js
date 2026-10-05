@@ -5,14 +5,14 @@ const $ = s => document.querySelector(s);
 const error = text => {$('#error').hidden=false; $('#error').textContent=text;};
 function resize(){document.documentElement.style.setProperty('--scale',Math.min(innerWidth/1080,innerHeight/1920));}
 addEventListener('resize',resize);resize();
-const scene=new THREE.Scene(), camera=new THREE.OrthographicCamera(-514,514,710,-710,1,2000);
+const scene=new THREE.Scene(), camera=new THREE.OrthographicCamera(-514,514,680,-680,1,2000);
 camera.position.z=900;
 scene.add(new THREE.AmbientLight(0xffffff,1.8));
 const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(-400,800,900);scene.add(light);
 let renderer,trophyRenderer;
 try{
   renderer=new THREE.WebGLRenderer({canvas:$('#game'),alpha:true,antialias:true});
-  renderer.setSize(1028,1420,false);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  renderer.setSize(1028,1360,false);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
   trophyRenderer=new THREE.WebGLRenderer({canvas:$('#trophy'),alpha:true,antialias:true});
   trophyRenderer.setSize(930,540,false);trophyRenderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
 }catch(e){error('No se pudo iniciar el renderizador 3D.\nActiva la aceleración gráfica del navegador.');throw e;}
@@ -45,12 +45,12 @@ for(const [name,model] of Object.entries(models)){
   const mesh=new THREE.Mesh(geometry,material);mesh.frustumCulled=false;group.add(mesh);
  }
  // The source model keeps N64's original scale and skeletal rest pose.
- group.rotation.y=-Math.PI*.3125;
+ group.rotation.y=name==='magikarp'?-Math.PI*.3125:Math.PI;
  group.rotation.x=0x600*Math.PI/32768;
  group.updateMatrixWorld(true);
  const bounds=new THREE.Box3().setFromObject(group),center=bounds.getCenter(new THREE.Vector3());
  const root=new THREE.Group();if(name!=='magikarp')group.position.sub(center);root.add(group);
- const size=bounds.getSize(new THREE.Vector3());root.scale.setScalar(name==='magikarp'?2.8:60/Math.max(size.x,size.y));
+ const size=bounds.getSize(new THREE.Vector3());root.scale.setScalar(name==='magikarp'?4:180/Math.max(size.x,size.y));
  templates[name]=root;
 }
 function tint(root,color){
@@ -82,7 +82,7 @@ function pose(fish,index,frame,arenaJump=false){
  // twelve-player cell independently of the larger, readable character size.
  const travel=arenaJump?matrices[1][13]-models.magikarp.animations['0'][0][1][13]:0;
  fish.userData.poseMatrices.forEach((m,i)=>{
-  m.fromArray(matrices[i]);if(i>0)m.elements[13]-=travel*(1-.7/2.8);
+  m.fromArray(matrices[i]);if(i>0)m.elements[13]-=travel*(1-.7/4);
  });
 }
 const jumpClips=['8','10','14','5','6'];
@@ -96,6 +96,48 @@ function jumpPose(fish,age){
  pose(fish,'0',0);
 }
 const entities=new Map(),cards=new Map();let state=null,received=performance.now(),round=-1,trophy=null,winnerKey='';
+function buttonSkin(root){
+ const matrices=models.button.bones.map(b=>new THREE.Matrix4().fromArray(b.bind));
+ root.userData.poseMatrices=matrices;
+ root.traverse(mesh=>{
+  if(!mesh.isMesh)return;
+  mesh.material=mesh.material.clone();
+  mesh.material.onBeforeCompile=shader=>{
+   shader.uniforms.n64Matrices={value:matrices};
+   shader.vertexShader=`attribute vec3 n64Local; attribute vec3 n64Normal; attribute float n64Bone; uniform mat4 n64Matrices[${matrices.length}];\n`+shader.vertexShader;
+   shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>','vec3 objectNormal=mat3(n64Matrices[int(n64Bone)])*n64Normal;');
+   shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','vec3 transformed=(n64Matrices[int(n64Bone)]*vec4(n64Local,1.0)).xyz;');
+  };
+ });
+}
+function buttonPose(button,score,age){
+ const frames=models.button.animations['0'];
+ const frame=age===null||age<state.hit_seconds?frames.length-1:Math.min(frames.length-1,Math.floor((age-state.hit_seconds)*30));
+ const source=frames[frame];
+ button.userData.poseMatrices.forEach((matrix,i)=>matrix.fromArray(source[i]));
+ // The original callback rotates the three ten-position drums around X.
+ const digits=[Math.floor(score/100)%10,Math.floor(score/10)%10,score%10];
+ for(let i=0;i<3;i++){
+  button.userData.poseMatrices[i+2].multiply(new THREE.Matrix4().makeRotationX((359-digits[i]*36)*Math.PI/180));
+ }
+}
+function layout(){
+ const count=entities.size;
+ $('#screen').dataset.players=count;
+ $('#empty-lobby').hidden=count!==0;
+ if(!count)return;
+ const cols=count<=3?1:count<=6?2:3,rows=Math.ceil(count/cols);
+ const cellW=1028/cols,cellH=1360/rows,scale=Math.min(cellW/333,cellH/345)*.92;
+ $('#cards').style.setProperty('--identity-scale',Math.min(1.8,Math.max(1,scale)));
+ [...entities.values()].forEach((entity,index)=>{
+  const row=Math.floor(index/cols),col=index%cols,rowCount=Math.min(cols,count-row*cols);
+  const x=(col-(rowCount-1)/2)*cellW,y=680-(row+.5)*cellH;
+  entity.root.position.set(x,y,0);entity.root.scale.setScalar(scale);
+  const card=cards.get(entity.id).card;
+  card.style.left=(50+x/1028*100-cellW/1028*50)+'%';
+  card.style.top=row/rows*100+'%';card.style.width=100/cols+'%';card.style.height=100/rows+'%';
+ });
+}
 function avatar(player){
  let element;
  if(player.avatar){element=document.createElement('img');element.src=player.avatar;element.referrerPolicy='no-referrer';element.alt=player.name;element.onerror=()=>{element.replaceWith(initial(player));};}
@@ -107,28 +149,25 @@ function reset(){
  for(const entity of entities.values()){
   scene.remove(entity.root);
   entity.fish.traverse(m=>{if(m.isMesh)m.material.dispose();});
+  entity.button.traverse(m=>{if(m.isMesh)m.material.dispose();});
  }
  entities.clear();cards.clear();$('#cards').replaceChildren();
- for(let i=0;i<12;i++){
-  const card=document.createElement('div');card.className='card';card.dataset.slot=i;
-  const empty=document.createElement('div');empty.className='empty';empty.innerHTML=`<strong>${String(i+1).padStart(2,'0')}</strong><span>!unir</span>`;
-  card.append(empty);$('#cards').append(card);
- }
+ layout();
 }
 function entityFor(player){
  if(entities.has(player.id))return entities.get(player.id);
  const root=new THREE.Group(),fish=templates.magikarp.clone(true),button=templates.button.clone(true);
- tint(fish,player.color);button.rotation.y=Math.PI;button.position.set(0,50,-10);
+ tint(fish,player.color);buttonSkin(button);button.rotation.y=Math.PI;button.position.set(0,50,-10);
  fish.position.set(0,-105,20);root.add(fish,button);
- root.position.set((player.slot%3-1)*347,538-Math.floor(player.slot/3)*358.5,0);scene.add(root);
- const entity={root,fish,button};entities.set(player.id,entity);
- const card=document.querySelector(`[data-slot="${player.slot}"]`);card.classList.add('occupied');card.style.setProperty('--player',player.color);card.replaceChildren();
+ scene.add(root);
+ const entity={id:player.id,root,fish,button};entities.set(player.id,entity);
+ const card=document.createElement('div');card.className='card occupied';card.dataset.slot=player.slot;card.style.setProperty('--player',player.color);$('#cards').append(card);
  const identity=document.createElement('div');identity.className='identity';identity.append(avatar(player));
  const name=document.createElement('span');name.className='name';name.textContent=player.name;identity.append(name);
  const points=document.createElement('div');points.className='points';
  const progress=document.createElement('div');progress.className='progress';
  const bar=document.createElement('div');bar.className='bar';card.append(identity,points,progress,bar);
- cards.set(player.id,{card,points,progress});return entity;
+ cards.set(player.id,{card,points,progress});layout();return entity;
 }
 function updateWinner(s){
  const key=s.round+':'+s.winners.join(',');if(key===winnerKey)return;winnerKey=key;
@@ -145,7 +184,7 @@ function updateWinner(s){
  $('#winner-score').textContent=winners.length?`${winners[0].score} golpes al botón`:'';
  if(trophy){trophyScene.remove(trophy);trophy.traverse(m=>{if(m.isMesh)m.material.dispose();});}
  trophy=new THREE.Group();
- winners.forEach((p,i)=>{let fish=templates.magikarp.clone(true);tint(fish,p.color);fish.scale.multiplyScalar(winners.length===1?3:winners.length>4?1.1:1.6);const cols=Math.min(4,winners.length),rows=Math.ceil(winners.length/cols);fish.position.x=(i%cols-(cols-1)/2)*170;fish.position.y=((rows-1)/2-Math.floor(i/cols))*115;trophy.add(fish);});
+ winners.forEach((p,i)=>{let fish=templates.magikarp.clone(true);tint(fish,p.color);fish.scale.multiplyScalar(winners.length===1?2.1:winners.length>4?.77:1.12);const cols=Math.min(4,winners.length),rows=Math.ceil(winners.length/cols);fish.position.x=(i%cols-(cols-1)/2)*170;fish.position.y=((rows-1)/2-Math.floor(i/cols))*115;trophy.add(fish);});
  trophyScene.add(trophy);
  $('#podium').replaceChildren();
  [...s.players].sort((a,b)=>b.score-a.score||a.slot-b.slot).slice(0,5).forEach((p,i)=>{
@@ -161,12 +200,11 @@ function update(s){
  $('#instruction').textContent=s.phase==='lobby'?'Escribe !unir en el chat para jugar':s.phase==='finished'?'¡Gracias por participar!':'¡Toca la pantalla para hacer saltar a tu Magikarp!';
  $('#connection').textContent=s.connection;
  $('#winner').hidden=s.phase!=='finished';
- $('#countdown').hidden=s.phase!=='countdown';
  if(s.phase==='finished')updateWinner(s);
  for(const player of s.players){
   entityFor(player);const c=cards.get(player.id);
   c.points.innerHTML=`<b>${player.score}</b>`;
-  c.progress.textContent=`${player.remainder}/10 taps · ${player.pending} en cola`;
+  c.progress.textContent=`${player.remainder}/10 taps · ${player.score} puntos`;
   c.card.style.setProperty('--progress',player.remainder*10+'%');
  }
  $('#error').hidden=true;
@@ -182,13 +220,28 @@ function frame(now){
  if(state){
   const elapsed=(now-received)/1000,remaining=Math.max(0,state.remaining-elapsed);
   $('#timer').textContent=state.phase==='lobby'?'!unir':state.phase==='finished'?'FIN':`${Math.ceil(remaining)}s`;
-  if(state.phase==='countdown')$('#countdown').textContent=Math.max(1,Math.ceil(remaining));
+  const playAge=state.duration-remaining;
+  const countdown=state.phase==='countdown',go=state.phase==='playing'&&playAge<.9;
+  $('#countdown').hidden=!countdown&&!go;
+  if(countdown||go){
+   const digit=go?'go':String(Math.max(1,Math.min(3,Math.ceil(remaining/.9))));
+   const img=$('#countdown img'),src='/countdown/'+digit+'.png';
+   if(img.getAttribute('src')!==src){img.src=src;img.alt=go?'¡Comienza!':digit;}
+   // fragment2 func_87802360: original 27-frame pop and exit squash.
+   const beatRemaining=countdown?remaining-(Number(digit)-1)*.9:.9-playAge;
+   const ticks=Math.max(0,Math.min(27,Math.ceil(beatRemaining*30)));
+   let sx=0,sy=0;
+   if(ticks>=18){const angle=Math.trunc((1-(27-ticks)/10)*81920);const shrink=.5*(angle<=65536?.25:1)*Math.abs(Math.sin((angle&65535)/65536*Math.PI*2));sx=sy=1-shrink;}
+   else if(ticks>=8){sx=sy=1;}
+   else if(go&&ticks>0){sx=ticks/7;sy=1/sx;}
+   img.style.transform=`scale(${sx},${sy})`;
+  }
   for(const p of state.players){
    const e=entities.get(p.id);if(!e)continue;
    const age=p.jump_age===null?null:p.jump_age+elapsed;
    if(age!==null&&age<state.jump_seconds)jumpPose(e.fish,age);
    else pose(e.fish,'0',(now*.03+p.slot*3)%models.magikarp.animations['0'].length);
-   e.button.position.y=50+(age!==null&&Math.abs(age-state.hit_seconds)<.09?9:0);
+   buttonPose(e.button,p.score,age);
   }
   if(trophy){trophy.rotation.y=Math.sin(now*.00065)*.3;trophy.position.y=Math.sin(now*.002)*10;trophy.children.forEach(fish=>pose(fish,'7',now*.03%models.magikarp.animations['7'].length));}
  }

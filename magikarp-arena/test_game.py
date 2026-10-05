@@ -10,6 +10,14 @@ class ArenaTests(unittest.TestCase):
     def join(self,user='uno',**data):self.game.event(dict(kind='comment',user=user,message='!unir',**data))
     def taps(self,user,count):self.game.event(dict(kind='like',user=user,count=count))
     def begin(self,duration=60):self.game.start(duration);self.clock.now=3;self.game.tick()
+    def test_original_countdown_blocks_taps_until_go(self):
+        self.join();self.game.start(60)
+        self.clock.now=2.699;self.taps('uno',10)
+        self.assertEqual(self.game.snapshot()['phase'],'countdown')
+        self.assertEqual(self.game.players['uno']['jumps'],0)
+        self.clock.now=2.7;self.taps('uno',10)
+        self.assertEqual(self.game.snapshot()['phase'],'playing')
+        self.assertEqual(self.game.players['uno']['jumps'],1)
     def test_limit_identity_duplicates_and_late_join(self):
         self.join('@UNO',name='<script>');self.join('uno')
         for i in range(20):self.join(str(i))

@@ -16,6 +16,7 @@ $captureProcess=$null
 try {
     $env:PSR_AUTOBOOT='1'; $env:PSR_DEBUG_PORT='4372'
     $env:STADIUMFEI_MUSIC_REQUEST=Join-Path $assets 'music-request.txt'
+    Set-Content -LiteralPath $env:STADIUMFEI_MUSIC_REQUEST -Value '0 -1' -Encoding ascii
     $captureProcess=Start-Process $exe -WorkingDirectory (Split-Path $exe) -WindowStyle Hidden -RedirectStandardError (Join-Path $assets 'music-capture.log') -PassThru
     & $arenaPython (Join-Path $PSScriptRoot 'capture_music.py') --assets $assets
     if ($LASTEXITCODE -ne 0) { throw 'Falló la captura; consulta local-assets/music-capture.log' }
@@ -23,4 +24,4 @@ try {
     if ($captureProcess -and -not $captureProcess.HasExited) { Stop-Process -Id $captureProcess.Id }
     foreach ($name in $previous.Keys) { [Environment]::SetEnvironmentVariable($name,$previous[$name],'Process') }
 }
-Write-Host 'Música original lista para la sala, la partida y el ganador.'
+Write-Host 'Música y efectos originales listos para la sala, la cuenta, los saltos y el ganador.'

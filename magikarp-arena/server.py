@@ -27,6 +27,10 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/state': return self.respond(200, arena.snapshot())
         if path=='/api/health': return self.respond(200, dict(ok=True, app='stadiumfei-magikarp', assets=(ROOT/'local-assets/models.json').is_file()))
         files={'/':'arena.html','/arena.js':'arena.js','/music.js':'music.js','/style.css':'style.css','/control':'control.html',
+            '/assets/kafeacuario.png':'assets/kafeacuario.png',
+            '/countdown/3.png':'local-assets/countdown-3.png','/countdown/2.png':'local-assets/countdown-2.png',
+            '/countdown/1.png':'local-assets/countdown-1.png','/countdown/go.png':'local-assets/countdown-go.png',
+            '/music/countdown.wav':'local-assets/countdown.wav','/music/jump.wav':'local-assets/jump.wav','/music/hit.wav':'local-assets/hit.wav',
             '/music/lobby.wav':'local-assets/lobby.wav','/music/playing.wav':'local-assets/playing.wav','/music/winner.wav':'local-assets/winner.wav',
             '/models.json':'local-assets/models.json','/vendor/three.module.js':'node_modules/three/build/three.module.js',
             '/vendor/three.core.js':'node_modules/three/build/three.core.js'}
@@ -52,7 +56,9 @@ class Handler(BaseHTTPRequestHandler):
                 elif action=='finish': arena.finish()
                 elif action=='demo':
                     if arena.phase!='lobby': raise ValueError('La demo se carga en una sala nueva')
-                    for i in range(12): arena.event(dict(kind='comment',user=f'demo{i+1}',name=f'Jugador {i+1}',message='!unir'))
+                    count=data.get('count',12)
+                    if type(count) is not int or not 1<=count<=12:raise ValueError('Prueba: de 1 a 12 jugadores')
+                    for i in range(count): arena.event(dict(kind='comment',user=f'demo{i+1}',name=f'Jugador {i+1}',message='!unir'))
                 elif action=='demo_taps':
                     for p in list(arena.players.values()):
                         if p['id'].startswith('demo'): arena.event(dict(kind='like',user=p['id'],count=(p['slot']+1)*10))

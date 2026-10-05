@@ -6,6 +6,10 @@ Sala vertical 9:16 para TikTok LIVE y OBS. Hasta 12 espectadores escriben `!unir
 
 Se reutilizan las mallas y las texturas originales del minijuego de Pokémon Stadium, junto con las animaciones de reposo, salto y victoria. El port y su descompilación sirvieron para identificar el formato y los recursos. Las reglas, la sala, la interfaz vertical y el vínculo con TikTok son nuevos para admitir doce jugadores.
 
+La cuenta regresiva usa las cuatro imágenes originales de Ditto (3, 2, 1 y salida) extraídas por `export_ui.py`, con intervalos de 27 fotogramas a 30 FPS. Los taps se habilitan después de los 2,7 segundos de preparación. El botón usa su modelo original, su animación de impacto y las ruedas numéricas articuladas para mostrar los puntos.
+
+El fondo «Kafeacuario · Zona de Magikarps» es una imagen nueva generada para esta sala. Se distribuye en `assets/`. La cuadrícula se adapta a los inscritos: una columna hasta tres, dos hasta seis y tres hasta doce; la última fila queda centrada y no se dibujan puestos vacíos.
+
 `export_models.py` lee la ROM local US 1.0 en formato z64, verifica su MD5, descomprime los recursos PERS-SZP/Yay0 y recorre la geometría y las listas F3DEX2. Los modelos del Magikarp y del botón son las entradas 172 y 173 del archivo de recursos en 0x920000. El código sigue los formatos documentados por `geo_layout.c`, `12D80.c`, `17300.c`, `3FB0.h` y `gbi.h` de la descompilación del port. Se conservan los vértices compartidos por articulaciones y las texturas RGBA16/IA16/I8.
 
 **La ROM y los recursos extraídos no se distribuyen.** `local-assets/` y `node_modules/` están ignorados por Git. Los gráficos se regeneran desde la ROM del usuario con `Preparar.ps1`. El resto de la sala puede subirse al repositorio.
@@ -19,7 +23,7 @@ Se reutilizan las mallas y las texturas originales del minijuego de Pokémon Sta
 5. Para OBS usa una fuente navegador con `http://127.0.0.1:4390/`, ancho **1080**, alto **1920**, a 60 FPS. También puedes capturar la ventana del juego.
 6. Al terminar se muestra el ganador. Pulsa **Nueva sala de inscripción** para recibir nuevos participantes.
 
-La sala se sirve únicamente en localhost. Los controles del anfitrión están en `http://127.0.0.1:4390/control`. Desde allí puedes cargar doce jugadores de prueba y enviarles taps después de comenzar una ronda. Abre una sala nueva antes de jugar con personas reales.
+La sala se sirve únicamente en localhost. Los controles del anfitrión están en `http://127.0.0.1:4390/control`. Desde allí puedes elegir de uno a doce jugadores de prueba y enviarles taps después de comenzar una ronda. Abre una sala nueva antes de jugar con personas reales.
 
 ## TikTok y pruebas
 
@@ -31,8 +35,8 @@ Pruebas automáticas: `python -m unittest test_game.py`. Se verifican límite de
 
 ## Música original
 
-La inscripción y la cuenta regresiva reproducen la pista de selección de minijuegos (0x16), la partida la de Magikarp (10), y el ganador la fanfarria de victoria (0x1A). Las pistas WAV se generan localmente con el propio motor de audio del port. El navegador cambia de música automáticamente, repite las pistas de sala y partida, y reproduce la victoria una vez por resultado. El control ♫ permite activar, silenciar y ajustar el volumen. Si el navegador impide el inicio automático, pulsa Activar música. En OBS activa **Controlar audio mediante OBS** en la fuente navegador y comprueba su mezclador.
+La inscripción reproduce la pista de selección de minijuegos (0x16), la partida la de Magikarp (10), y el ganador la fanfarria de victoria (0x1A). Durante la cuenta regresiva se escucha el efecto original 0x20001; la música de partida comienza medio segundo después de la salida, como en el original. El salto y el impacto usan 0x20006 (una de las tres variantes originales del salto) y 0x20008. Las pistas WAV se generan localmente con el propio motor de audio del port. El navegador repite las pistas de sala y partida y reproduce la victoria una vez por resultado. El control ♫ permite activar, silenciar y ajustar el volumen. Si el navegador impide el inicio automático, pulsa Activar música. En OBS activa **Controlar audio mediante OBS** en la fuente navegador y comprueba su mezclador.
 
-Para regenerar la música, cierra el port y ejecuta `Capturar-musica.ps1`. Instala un hook opcional y compila el port, inicia una instancia de captura y guarda solo las tres pistas en `local-assets/`. Requiere el port ya configurado para compilar. El hook no cambia el juego normal: solo se activa cuando se define `STADIUMFEI_MUSIC_REQUEST`. No se suben la música ni los recursos del juego al repositorio.
+Para regenerar la música y los efectos, cierra el port y ejecuta `Capturar-musica.ps1`. Instala hooks opcionales, compila el port e inicia una instancia de captura. Durante la captura bloquea los sonidos de la demostración automática para evitar mezclarlos con las tomas; guarda las tres pistas y los tres efectos en `local-assets/`. Requiere el port ya configurado para compilar. Los hooks solo se activan cuando se define `STADIUMFEI_MUSIC_REQUEST`. No se suben la música ni los recursos del juego al repositorio.
 
 La pista de inscripción se verificó en `fragment39_27BCC0.c`: `func_825046AC` carga `kids_club_select_ui` y ejecuta `func_82504370`, que inicia explícitamente la música `0x16`. El capturador comprueba cada segundo el identificador de música activo y descarta la toma si el arranque del port lo cambia.

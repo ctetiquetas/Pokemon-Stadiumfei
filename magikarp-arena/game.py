@@ -66,7 +66,7 @@ class Arena:
             if not self.players: raise ValueError('Necesitas al menos un participante')
             if type(duration) is not int or not 10 <= duration <= 300: raise ValueError('Duración: 10 a 300 segundos')
             self.duration = duration
-            self.starts = self.clock() + 3
+            self.starts = self.clock() + 2.7  # Three original 27-frame Ditto beats at 30 FPS.
             self.ends = self.starts + duration
             self.phase = 'countdown'
             self.revision += 1
