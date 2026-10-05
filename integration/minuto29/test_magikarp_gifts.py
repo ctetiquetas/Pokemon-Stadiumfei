@@ -18,7 +18,7 @@ class BridgeGiftTest(unittest.TestCase):
                 asyncio.run(scenario())
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);mapping=root/'mapping.json';mapping.write_text('{}')
-            with patch.object(app,'TikTokLiveClient',Client),patch.object(app,'magikarp_active',return_value=True),patch.object(app,'magikarp_post',return_value=dict(assigned=True,applied=True,status='Rosa → salto extra aplicado')) as post,patch.object(app,'pokemon_forward') as other:
+            with patch.object(app,'TikTokLiveClient',Client),patch.object(app.canal29_chat,'mode',return_value=''),patch.object(app.canal29_chat,'emit'),patch.object(app,'magikarp_active',return_value=True),patch.object(app,'magikarp_post',return_value=dict(assigned=True,applied=True,status='Rosa → salto extra aplicado')) as post,patch.object(app,'pokemon_forward') as other:
                 app.bridge_main('test',str(root/'out.jsonl'),str(mapping),str(root/'status.jsonl'),str(root/'wallet.db'))
             self.assertEqual(post.call_count,2);other.assert_not_called()
             self.assertEqual([c.args[1]['count'] for c in post.call_args_list],[1,1])

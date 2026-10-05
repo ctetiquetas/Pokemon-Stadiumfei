@@ -3,6 +3,7 @@ import tkinter as tk
 import os
 from tkinter import ttk, messagebox
 import magikarp_live
+import canal29_chat
 
 _window=None
 
@@ -10,16 +11,21 @@ def open_minuto29(parent,start_live=None,stop_live=None,account=None):
     global _window
     if _window is not None and _window.winfo_exists():
         _window.deiconify();_window.lift();return
-    window=_window=tk.Toplevel(parent);window.title('Minuto 29');window.geometry('560x590')
+    window=_window=tk.Toplevel(parent);window.title('Minuto 29');window.geometry('560x690')
     ttk.Label(window,text='¿Qué vamos a jugar?',font=('Segoe UI',17,'bold')).pack(pady=16)
     picks=ttk.Frame(window);picks.pack(fill='x',padx=16)
     controls=ttk.Frame(window);controls.pack(fill='both',expand=True,padx=22,pady=12)
+    ttk.Button(window,text='Chat · regalos de Canal 29',command=lambda:canal29_chat.open_chat(window)).pack(before=controls,fill='x',padx=22,pady=8)
+    def leave():
+        canal29_chat.select('');magikarp_live.set_active(False);window.destroy()
+    window.protocol('WM_DELETE_WINDOW',leave)
 
     def guarded(action):
         try: action()
         except Exception as error: messagebox.showerror('Minuto 29',str(error),parent=window)
 
     def select(mode):
+        canal29_chat.select(mode)
         for child in controls.winfo_children():child.destroy()
         if mode!='stadium':
             magikarp_live.set_active(False)
