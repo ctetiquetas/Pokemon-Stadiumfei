@@ -11,5 +11,9 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron extraer los gráficos locales' }
     & $arenaPython export_ui.py --rom $Rom
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo extraer la cuenta regresiva original' }
+    & $arenaPython -m pip install fonttools
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo instalar el conversor de fuentes' }
+    & $arenaPython export_font.py --rom $Rom
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo convertir la letra original de Stadium' }
 } finally { Pop-Location }
 Write-Host 'Magikarp listo. Abre Minuto 29 → Magikarp en tu interfaz TikTok.'

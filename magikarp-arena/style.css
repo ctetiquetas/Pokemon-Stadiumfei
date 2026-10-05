@@ -17,3 +17,14 @@ html,body{font-family:'Bahnschrift','Trebuchet MS',sans-serif}
 .topline,#timer,.name,.progress,footer{font-family:'Bahnschrift','Trebuchet MS',sans-serif}
 #timer{color:var(--stadium-yellow);text-shadow:0 3px #163b68}.initial{font-family:'Comic Sans MS','Trebuchet MS',sans-serif}
 #winner.multi h2{font-size:84px}#winner.multi #winner-score{margin-bottom:14px}#winner.multi #winner-reward{margin-bottom:22px}
+
+/* Original Stadium ROM alphabet for every visible label and control. */
+@font-face{font-family:'Stadium Local';src:url('/fonts/stadium.ttf') format('truetype');font-style:normal;font-weight:100 900;font-display:swap}
+html,body,#screen,#screen *,button,input,select{font-family:'Stadium Local',sans-serif!important;font-synthesis:none;font-weight:400!important}
+#winner h2,#empty-lobby strong{letter-spacing:1px;-webkit-text-stroke:2px #163b79;text-shadow:0 5px #173461,0 9px #06172e;transform:none}
+#winner h2{font-size:100px;line-height:1.2}
+#winner-score{font-size:43px;line-height:1.35}
+.name,#champions .name,.rank{letter-spacing:0;line-height:1.35}
+.eyebrow{letter-spacing:3px;line-height:1.35}
+#winner-reward{font-size:27px;line-height:1.5}.next{font-size:27px;line-height:1.4}
+footer strong{line-height:1.35}footer span,footer small{line-height:1.4}

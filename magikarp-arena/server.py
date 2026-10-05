@@ -52,6 +52,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/state': return self.respond(200, state())
         if path=='/api/health': return self.respond(200, dict(ok=True, app='stadiumfei-magikarp', assets=(ROOT/'local-assets/models.json').is_file()))
         files={'/':'arena.html','/arena.js':'arena.js','/music.js':'music.js','/style.css':'style.css','/control':'control.html',
+            '/fonts/stadium.ttf':'local-assets/stadium.ttf',
             '/assets/kafeacuario.png':'assets/kafeacuario.png',
             '/countdown/3.png':'local-assets/countdown-3.png','/countdown/2.png':'local-assets/countdown-2.png',
             '/countdown/1.png':'local-assets/countdown-1.png','/countdown/go.png':'local-assets/countdown-go.png',
