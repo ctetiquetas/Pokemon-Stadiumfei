@@ -33,10 +33,14 @@ Las animaciones duran 1,1 segundos por salto (clips originales 8 → 10 → 14 �
 
 Pruebas automáticas: `python -m unittest test_game.py`. Se verifican límite de doce, usuarios duplicados, cierre de inscripciones, acumulación individual, impactos, cola, corte de tiempo, ganador, empate y reinicio. Verificación local realizada: doce jugadores y puntuaciones de 1 a 12; pantalla final del ganador y renderizado WebGL sin errores. Falta la validación con participantes de un LIVE real.
 
-## Música original
+## Música y efectos
 
-La inscripción reproduce la pista de selección de minijuegos (0x16), la partida la de Magikarp (10), y el ganador la fanfarria de victoria (0x1A). Durante la cuenta regresiva se escucha el efecto original 0x20001; la música de partida comienza medio segundo después de la salida, como en el original. El salto y el impacto usan 0x20006 (una de las tres variantes originales del salto) y 0x20008. Las pistas WAV se generan localmente con el propio motor de audio del port. El navegador repite las pistas de sala y partida y reproduce la victoria una vez por resultado. El control ♫ permite activar, silenciar y ajustar el volumen. Si el navegador impide el inicio automático, pulsa Activar música. En OBS activa **Controlar audio mediante OBS** en la fuente navegador y comprueba su mezclador.
+La inscripción reproduce el archivo local `Menumusic.mp3`. Al comenzar la cuenta regresiva se detiene el menú; cuando Ditto muestra el **1** (últimos 0,9 segundos), comienza `Magikarps.mp3` y continúa durante la competencia sin reiniciarse al salir Ditto. Ambos MP3 se repiten cuando llegan al final. Las antiguas pistas WAV de menú y partida ya no se usan. El ganador conserva la fanfarria original (0x1A), una sola vez por resultado. La cuenta, salto e impacto conservan los efectos originales 0x20001, 0x20006 y 0x20008.
+
+Ejecuta `Instalar-musica.ps1` para copiar `Menumusic.mp3` y `Magikarps.mp3` desde Descargas a `local-assets/`. Acepta `-MenuFile` y `-PlayingFile` para otras rutas. Los MP3 se guardan solo en el equipo y quedan ignorados por Git. Recarga la ventana del juego y la fuente OBS después de cambiar los archivos.
+
+El control ♫ permite activar, silenciar y ajustar el volumen. Si el navegador impide el inicio automático, pulsa Activar música. En OBS activa **Controlar audio mediante OBS** en la fuente navegador y comprueba su mezclador. `node test_music.mjs` verifica el inicio en el 1, la continuidad de la canción al comenzar la partida y el cambio de ronda.
 
 Para regenerar la música y los efectos, cierra el port y ejecuta `Capturar-musica.ps1`. Instala hooks opcionales, compila el port e inicia una instancia de captura. Durante la captura bloquea los sonidos de la demostración automática para evitar mezclarlos con las tomas; guarda las tres pistas y los tres efectos en `local-assets/`. Requiere el port ya configurado para compilar. Los hooks solo se activan cuando se define `STADIUMFEI_MUSIC_REQUEST`. No se suben la música ni los recursos del juego al repositorio.
 
-La pista de inscripción se verificó en `fragment39_27BCC0.c`: `func_825046AC` carga `kids_club_select_ui` y ejecuta `func_82504370`, que inicia explícitamente la música `0x16`. El capturador comprueba cada segundo el identificador de música activo y descarta la toma si el arranque del port lo cambia.
+El capturador conserva las antiguas pistas originales para archivo local, pero la sala usa únicamente los MP3 elegidos para inscripción y partida.

@@ -1,4 +1,4 @@
-// All audio is generated locally by the original ROM's audio engine.
+// Local user-supplied MP3 music; original countdown/jump/hit effects.
 const audio=document.createElement('audio');audio.id='original-music';audio.hidden=true;document.body.append(audio);audio.preload='auto';audio.volume=.35;
 const button=document.querySelector('#music-toggle'),volume=document.querySelector('#music-volume');
 let key='',track='',blocked=false,muted=false,retryAt=0,lastCue='',lastSound=0;
@@ -15,10 +15,9 @@ button.addEventListener('click',()=>{if(blocked){blocked=false;muted=false;audio
 volume.addEventListener('input',()=>{audio.volume=Number(volume.value)/100;for(const e of effects)e.volume=audio.volume*.7;});
 audio.addEventListener('error',()=>{button.textContent='Música pendiente';retryAt=Date.now()+5000;});
 export function updateMusic(state){
- const age=state.duration-state.remaining;
- const next=state.phase==='countdown'||(state.phase==='playing'&&age<.5)?'':state.phase==='finished'?'winner':state.phase==='playing'?'playing':'lobby';
+ const next=state.phase==='countdown'?(state.remaining<=.9?'playing':''):state.phase==='finished'?'winner':state.phase==='playing'?'playing':'lobby';
  const nextKey=state.round+':'+next;
- if(key!==nextKey){key=nextKey;track=next;audio.pause();if(next){audio.src='/music/'+track+'.wav?v=3';audio.loop=track!=='winner';audio.currentTime=0;play();}else{audio.removeAttribute('src');audio.load();}}
+ if(key!==nextKey){key=nextKey;track=next;audio.pause();if(next){audio.src='/music/'+track+(track==='winner'?'.wav?v=3':'.mp3?v=1');audio.loop=track!=='winner';audio.currentTime=0;play();}else{audio.removeAttribute('src');audio.load();}}
  else if(next&&audio.error&&Date.now()>=retryAt){retryAt=Date.now()+5000;audio.load();play();}
  if(state.phase==='countdown'){
   const cue=state.round+':'+Math.ceil(state.remaining/.9);

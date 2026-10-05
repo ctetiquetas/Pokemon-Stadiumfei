@@ -31,7 +31,7 @@ class Handler(BaseHTTPRequestHandler):
             '/countdown/3.png':'local-assets/countdown-3.png','/countdown/2.png':'local-assets/countdown-2.png',
             '/countdown/1.png':'local-assets/countdown-1.png','/countdown/go.png':'local-assets/countdown-go.png',
             '/music/countdown.wav':'local-assets/countdown.wav','/music/jump.wav':'local-assets/jump.wav','/music/hit.wav':'local-assets/hit.wav',
-            '/music/lobby.wav':'local-assets/lobby.wav','/music/playing.wav':'local-assets/playing.wav','/music/winner.wav':'local-assets/winner.wav',
+            '/music/lobby.mp3':'local-assets/Menumusic.mp3','/music/playing.mp3':'local-assets/Magikarps.mp3','/music/winner.wav':'local-assets/winner.wav',
             '/models.json':'local-assets/models.json','/vendor/three.module.js':'node_modules/three/build/three.module.js',
             '/vendor/three.core.js':'node_modules/three/build/three.core.js'}
         target=ROOT/files[path] if path in files else None
