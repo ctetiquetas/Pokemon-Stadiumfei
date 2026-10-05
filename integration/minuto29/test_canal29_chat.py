@@ -6,6 +6,14 @@ from execution import ExecutionTracker
 from queue_cancel import cancel_persisted
 
 class ChatTest(unittest.TestCase):
+    def test_simulation_uses_guarded_demo_endpoint_and_logs_as_test(self):
+        with tempfile.TemporaryDirectory() as tmp,patch.object(chat,'SETTINGS',Path(tmp)/'settings.json'),patch.object(chat,'EVENTS',Path(tmp)/'events.jsonl'):
+            calls=[]
+            def post(path,payload):calls.append((path,payload));return dict(status='Elote activado')
+            chat.simulate('demo1','Its corn',2,post)
+            self.assertEqual(calls,[('/api/control',dict(action='demo_gift',user='demo1',gift='Its corn',count=2))])
+            event=json.loads(chat.EVENTS.read_text(encoding='utf-8'));self.assertTrue(event['sender'].startswith('PRUEBA'))
+            self.assertTrue(event['message'].startswith('SIMULACIÓN'))
     def test_aliases_persist_by_id_without_changing_old_events(self):
         with tempfile.TemporaryDirectory() as tmp,patch.object(chat,'SETTINGS',Path(tmp)/'settings.json'),patch.object(chat,'EVENTS',Path(tmp)/'events.jsonl'):
             chat.emit(kind='gift',gift='Maíz nuevo',gift_id=123)

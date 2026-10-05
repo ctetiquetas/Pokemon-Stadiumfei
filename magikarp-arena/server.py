@@ -106,8 +106,8 @@ class Handler(BaseHTTPRequestHandler):
                 elif action=='demo_gift':
                     user=arena.identity(data.get('user'))
                     if user not in arena.players or not arena.players[user]['testParticipant']:raise ValueError('Selecciona un jugador de prueba')
-                    if data.get('gift') not in ('Rose','Its corn'):raise ValueError('Regalo de prueba inválido')
-                    result=arena.event(dict(kind='gift',user=user,gift=data['gift'],count=1))
+                    if not isinstance(data.get('gift'),str) or not 1<=len(data['gift'])<=128:raise ValueError('Regalo de prueba inválido')
+                    result=arena.event(dict(kind='gift',user=user,gift=data['gift'],count=data.get('count',1)))
                     return self.respond(200,dict(ok=True,**result))
                 else: raise ValueError('Acción no válida')
             else: return self.respond(404,dict(error='Ruta no válida'))

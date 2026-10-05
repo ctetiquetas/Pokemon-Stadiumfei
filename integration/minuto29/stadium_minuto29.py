@@ -11,7 +11,7 @@ def open_minuto29(parent,start_live=None,stop_live=None,account=None):
     global _window
     if _window is not None and _window.winfo_exists():
         _window.deiconify();_window.lift();return
-    window=_window=tk.Toplevel(parent);window.title('Minuto 29');window.geometry('560x690')
+    window=_window=tk.Toplevel(parent);window.title('Minuto 29');window.geometry('560x760')
     ttk.Label(window,text='¿Qué vamos a jugar?',font=('Segoe UI',17,'bold')).pack(pady=16)
     picks=ttk.Frame(window);picks.pack(fill='x',padx=16)
     controls=ttk.Frame(window);controls.pack(fill='both',expand=True,padx=22,pady=12)
@@ -57,6 +57,7 @@ def open_minuto29(parent,start_live=None,stop_live=None,account=None):
             ttk.Button(controls,text='Detener LIVE',command=stop).pack(fill='x',pady=4)
         ttk.Label(controls,text='OBS: fuente navegador http://127.0.0.1:4390/\nAncho 1080 · alto 1920. También puedes capturar la ventana.',wraplength=490).pack(pady=8)
         ttk.Button(controls,text='Controles y prueba local',command=lambda:guarded(open_controls)).pack(fill='x',pady=4)
+        ttk.Button(controls,text='Simular regalos (pruebas)',command=lambda:canal29_chat.open_simulation(window)).pack(fill='x',pady=4)
 
     def open_controls():
         import webbrowser
