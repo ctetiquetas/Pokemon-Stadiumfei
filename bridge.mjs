@@ -15,7 +15,7 @@ export class TapCounter {
 }
 
 export class Controller {
-  constructor(port = 4370) { this.port = port; }
+  constructor(port = 4371) { this.port = port; }
   async connect() {
     this.socket = net.createConnection({ host: '127.0.0.1', port: this.port });
     await new Promise((resolve, reject) => {
@@ -57,7 +57,7 @@ async function main() {
   const user = option('--live', null);
   const interval = Number(option('--interval-ms', '700'));
   const hold = Number(option('--hold-ms', '100'));
-  const port = Number(option('--port', '4370'));
+  const port = Number(option('--port', '4371'));
   if (![interval, hold, port].every(Number.isSafeInteger) || hold < 30 || interval < hold + 30 || port < 1 || port > 65535) {
     throw new Error('Puerto o tiempos inválidos; intervalo debe superar la pulsación en al menos 30 ms');
   }

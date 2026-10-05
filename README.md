@@ -4,7 +4,7 @@ Primera versión del puente: **10 taps/likes recibidos = una pulsación de A par
 
 ## Prueba
 
-Necesitas Node.js 22 o posterior y un ejecutable de PokemonStadiumRecomp con el servidor TCP del código local (127.0.0.1:4370). El puente no incluye el port ni la ROM.
+Necesitas Node.js 22 o posterior y un ejecutable de PokemonStadiumRecomp con el servidor TCP del código local (127.0.0.1:4371). El puente no incluye el port ni la ROM.
 
 1. Abre el port, asigna teclado o mando al jugador 1 y entra manualmente a Magikarp's Splash. Inicia la ronda.
 2. En esta carpeta ejecuta `node bridge.mjs`.
