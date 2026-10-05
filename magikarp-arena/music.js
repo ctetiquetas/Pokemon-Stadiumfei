@@ -24,7 +24,7 @@ export function updateMusic(state){
   if(audio.error&&Date.now()>=retryAt){retryAt=Date.now()+5000;audio.load();play();}
   return;
  }
- key=nextKey;track=next;audio.pause();audio.src='/music/'+track+'.wav';
+ key=nextKey;track=next;audio.pause();audio.src='/music/'+track+'.wav?v=2';
  audio.loop=track!=='winner';audio.currentTime=0;play();
 }
 export function musicDiagnostics(){return {track,blocked,muted,paused:audio.paused,time:audio.currentTime,error:audio.error?.code||null,volume:audio.volume};}
