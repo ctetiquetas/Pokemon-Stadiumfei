@@ -1,0 +1,52 @@
+--- a/tools/tiktok-live-bridge/app.py
++++ b/tools/tiktok-live-bridge/app.py
+@@ -13,7 +13,8 @@
+ import sys
+ sys.path.insert(0, 'C:\\Users\\xkafe\\Documents\\GitHub\\Pokediscord\\experiments\\kafei-battle-royal')
+ from pokemon_bridge import forward as pokemon_forward, open_battle, control_battle, profile_image
+-from minuto29 import open_minuto29
++from stadium_minuto29 import open_minuto29
++from stadium_backend import forward_likes as stadium_forward_likes
+ import unicodedata
+ import re
+ import time
+@@ -286,6 +287,7 @@
+     @client.on(LikeEvent)
+     async def on_like(event):
+         nonlocal tap_remainder
++        stadium_forward_likes(max(0, int(event.count or 0)))
+         pokemon_forward('like', tiktok_user_id(event.user), count=max(0, int(event.count or 0)), avatar=profile_image(event.user))
+         try:
+             settings = json.loads((Path(mapping_argument).parent / 'game-settings.json').read_text(encoding='utf-8'))
+@@ -454,7 +456,7 @@
+         actions.grid(row=3, column=0, columnspan=5, sticky='w', pady=(6,0))
+         ttk.Button(actions, text="Seleccionar port…", command=self.choose_game_executable).pack(side="left")
+         ttk.Button(actions, text="Abrir juego", command=lambda: self.launch_game(Path(self.event_file.get()))).pack(side="left", padx=8)
+-        ttk.Button(actions, text="Minuto 29", command=lambda: open_minuto29(self.root)).pack(side="left", padx=8)
++        ttk.Button(actions, text="Minuto 29", command=lambda: open_minuto29(self.root, start_live=self.start_minigame_live, stop_live=self.stop, account=self.account)).pack(side="left", padx=8)
+         ttk.Button(actions, text="Ver port y datos", command=self.show_game_paths).pack(side="left")
+         ttk.Button(actions, text="Seleccionar disco de Wind Waker…", command=self.choose_wind_waker).pack(side='left', padx=8)
+         connection.columnconfigure(3, weight=1)
+@@ -1169,7 +1171,12 @@
+         self.led.itemconfigure(self.led_dot, fill=color)
+         self.status_label.set(text)
+ 
+-    def start(self) -> None:
++    def start_minigame_live(self) -> None:
++        if self.process and self.process.poll() is None:
++            return
++        self.start(launch_selected_game=False)
++
++    def start(self, launch_selected_game=True) -> None:
+         account = self.account.get().strip().lstrip("@")
+         destination = self.event_file.get().strip()
+         if not account or not destination:
+@@ -1186,7 +1193,7 @@
+         self.queue_items.clear()
+         self.queue_sent_at.clear()
+         self.queue_tree.delete(*self.queue_tree.get_children())
+-        if self.launch_game(event_path) is False:
++        if launch_selected_game and self.launch_game(event_path) is False:
+             return
+         if getattr(sys, "frozen", False):
+             command = [sys.executable, "--bridge", account, destination, str(self.mapping_file), str(self.status_file), str(self.wallet_file)]
