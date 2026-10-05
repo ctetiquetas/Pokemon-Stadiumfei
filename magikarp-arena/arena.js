@@ -226,7 +226,7 @@ function frame(now){
   $('#countdown').hidden=!countdown&&!go&&!closing;
   if(countdown||go||closing){
    const beat=Math.max(1,Math.min(3,Math.ceil(remaining/.9)));
-   const digit=go?'go':String(closing?4-beat:beat);
+   const digit=go?'go':String(beat);
    const img=$('#countdown img'),src='/countdown/'+digit+'.png';
    if(img.getAttribute('src')!==src){img.src=src;img.alt=go?'¡Comienza!':digit;}
    // fragment2 func_87802360: original 27-frame pop and exit squash.
